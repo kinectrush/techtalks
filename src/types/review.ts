@@ -57,6 +57,9 @@ export type ReviewArticle = {
   excerpt: string;
   content?: string;
   coverImage: string;
+  /** Optional alternate cover images for "Editor's pick" hero/slot. */
+  editorPickCoverImageMobile?: string;
+  editorPickCoverImageDesktop?: string;
   category: ReviewCategory;
   author: ReviewAuthor;
   publishedAt: string;

@@ -15,6 +15,14 @@ type HeroBannerProps = {
 export async function HeroBanner({ article, locale }: HeroBannerProps) {
   const t = await getTranslations('Review');
   const href = `/review/${article.slug}` as const;
+  const mobileImage =
+    article.editorPickCoverImageMobile ??
+    article.editorPickCoverImageDesktop ??
+    article.coverImage;
+  const desktopImage =
+    article.editorPickCoverImageDesktop ??
+    article.editorPickCoverImageMobile ??
+    article.coverImage;
 
   return (
     <section className="group relative overflow-hidden rounded-xl border bg-card shadow-sm">
@@ -23,20 +31,34 @@ export async function HeroBanner({ article, locale }: HeroBannerProps) {
         aria-label={article.title}
         className="absolute inset-0 z-10"
       />
-      <div className="grid md:grid-cols-2">
-        <div className="relative aspect-[16/10] md:aspect-auto md:min-h-[360px]">
-          <Image
-            src={article.coverImage}
-            alt={article.title}
-            fill
-            priority
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, 50vw"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent md:bg-gradient-to-r" />
+      <div className="grid md:grid-cols-2 md:items-stretch">
+        <div className="relative">
+          <div className="relative aspect-[16/10] md:hidden">
+            <Image
+              src={mobileImage}
+              alt={article.title}
+              fill
+              priority
+              className="object-cover"
+              sizes="100vw"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+          </div>
+          <div className="relative hidden md:block md:h-full md:min-h-[360px]">
+            <Image
+              src={desktopImage}
+              alt={article.title}
+              fill
+              priority
+              className="object-cover"
+              sizes="50vw"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/20 to-transparent" />
+          </div>
         </div>
 
         <div className="flex flex-col justify-center gap-4 p-6 md:p-10">
+          
           <div className="flex flex-wrap items-center gap-2">
             {article.listBadge ? (
               <HotBadgeLabel

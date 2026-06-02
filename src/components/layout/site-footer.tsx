@@ -18,7 +18,6 @@ export async function SiteFooter() {
                 alt={t('siteName')}
                 className="h-9 w-auto object-contain"
               />
-              <p className="text-lg font-bold text-brand">{t('siteName')}</p>
             </div>
             <p className="max-w-md text-sm text-muted-foreground">
               {t('tagline')}
@@ -39,7 +38,7 @@ export async function SiteFooter() {
             </div>
           </div>
 
-          <div className="space-y-3 md:justify-self-end md:text-right">
+          <div className="space-y-3 md:justify-self-end md:text-left">
             <p className="text-sm font-semibold text-foreground">Liên hệ</p>
             <div className="flex items-center gap-2 md:justify-end">
               <a

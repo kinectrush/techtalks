@@ -70,6 +70,8 @@ export function ArticleFormDialog({
       excerpt: '',
       content: '',
       coverImage: '',
+      editorPickCoverImageMobile: '',
+      editorPickCoverImageDesktop: '',
       status: 'draft',
       isActive: true,
       rating: 4,
@@ -77,6 +79,7 @@ export function ArticleFormDialog({
       categoryId: categories[0]?.id ?? '',
       authorId: authors[0]?.id ?? '',
       isEditorPick: false,
+      affiliateUrl: '',
     },
   });
 
@@ -102,8 +105,11 @@ export function ArticleFormDialog({
         excerpt: '',
         content: '',
         coverImage: '',
+        editorPickCoverImageMobile: '',
+        editorPickCoverImageDesktop: '',
         ogImage: '',
         canonicalUrl: '',
+        affiliateUrl: '',
         status: 'draft',
         isActive: true,
         rating: 4,
@@ -177,6 +183,18 @@ export function ArticleFormDialog({
                   <Input id="subtitle" {...register('subtitle')} />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="affiliateUrl">Affiliate (URL)</Label>
+                  <Input
+                    id="affiliateUrl"
+                    placeholder="https://..."
+                    {...register('affiliateUrl')}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Nếu có, khi mở trang chi tiết sẽ thử mở thêm 1 tab sang link
+                    này.
+                  </p>
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="excerpt">Mô tả ngắn (lead) *</Label>
                   <Textarea id="excerpt" rows={3} {...register('excerpt')} />
                 </div>
@@ -246,6 +264,22 @@ export function ArticleFormDialog({
                   value={watch('coverImage')}
                   onChange={(url) => setValue('coverImage', url, { shouldValidate: true })}
                 />
+                {watch('isEditorPick') ? (
+                  <>
+                    <ImageUploadField
+                      label="Ảnh bìa (Biên tập chọn) - Mobile"
+                      folder="editor-picks"
+                      value={watch('editorPickCoverImageMobile') ?? ''}
+                      onChange={(url) => setValue('editorPickCoverImageMobile', url)}
+                    />
+                    <ImageUploadField
+                      label="Ảnh bìa (Biên tập chọn) - Desktop"
+                      folder="editor-picks"
+                      value={watch('editorPickCoverImageDesktop') ?? ''}
+                      onChange={(url) => setValue('editorPickCoverImageDesktop', url)}
+                    />
+                  </>
+                ) : null}
                 <ImageUploadField
                   label="Ảnh Open Graph (chia sẻ mạng xã hội)"
                   folder="og"

@@ -36,8 +36,11 @@ export type AdminArticleRow = {
   excerpt: string;
   content: string | null;
   coverImage: string;
+  editorPickCoverImageMobile: string | null;
+  editorPickCoverImageDesktop: string | null;
   ogImage: string | null;
   canonicalUrl: string | null;
+  affiliateUrl?: string | null;
   categoryId: string;
   authorId: string;
   categoryName?: string;
@@ -62,8 +65,11 @@ export type AdminArticleInput = {
   excerpt: string;
   content?: string;
   coverImage: string;
+  editorPickCoverImageMobile?: string;
+  editorPickCoverImageDesktop?: string;
   ogImage?: string;
   canonicalUrl?: string;
+  affiliateUrl?: string;
   categoryId: string;
   authorId: string;
   publishedAt: string;

@@ -1,10 +1,12 @@
 import { defineRouting } from 'next-intl/routing';
 
 export const routing = defineRouting({
-  locales: ['vi', 'en'],
+  // Language switching is disabled for now (single-locale site).
+  locales: ['vi'],
   defaultLocale: 'vi',
-  localePrefix: 'always',
-  localeDetection: true,
+  // Remove /vi prefix from URLs.
+  localePrefix: 'never',
+  localeDetection: false,
 });
 
 export type Locale = (typeof routing.locales)[number];

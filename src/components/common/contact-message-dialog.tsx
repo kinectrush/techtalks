@@ -30,7 +30,7 @@ type ContactMessageDialogProps = {
 };
 
 export function ContactMessageDialog({
-  label = 'Nhắn tin',
+  label = 'Liên hệ',
   className,
 }: ContactMessageDialogProps) {
   const [open, setOpen] = useState(false);

@@ -1,11 +1,12 @@
 import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
+import { cookies } from 'next/headers';
 
-import { Link } from '@/i18n/navigation';
 import type { ReviewSummary } from '@/types/review';
 
 import { ArticleContent } from './article-content';
-import { ReviewMeta } from './review-meta';
+import { AffiliateAutoOpen } from './affiliate-auto-open';
+import { ReviewEngagementBar } from './review-engagement-bar';
 import { StarRating } from './star-rating';
 
 type ReviewDetailViewProps = {
@@ -19,43 +20,43 @@ export async function ReviewDetailView({
 }: ReviewDetailViewProps) {
   const t = await getTranslations('Review');
   const hasContent = Boolean(article.content?.trim());
+  const affiliateUrl = article.affiliateLinks?.[0]?.url ?? '';
+  const authorName = article.author.name === 'Editorial' ? 'Admin' : article.author.name;
+  const initialLiked = Boolean(
+    (await cookies()).get(`rv_liked_${article.id}`)?.value,
+  );
 
   return (
     <article className="mx-auto max-w-3xl px-4 py-8 lg:py-12">
-      <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
-        {article.isEditorPick ? (
-          <span className="rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-semibold text-brand">
-            {t('editorPick')}
-          </span>
-        ) : null}
-      </div>
-
       <h1 className="text-3xl font-bold leading-tight tracking-tight md:text-4xl">
         {article.title}
       </h1>
+      {affiliateUrl ? <AffiliateAutoOpen url={affiliateUrl} /> : null}
 
       <div className="mt-4 flex flex-wrap items-center gap-4 border-b pb-6">
         <div className="flex items-center gap-2">
           {article.author.avatar ? (
             <Image
               src={article.author.avatar}
-              alt={article.author.name}
+              alt={authorName}
               width={36}
               height={36}
               className="rounded-full object-cover"
             />
           ) : (
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-sm font-semibold">
-              {article.author.name.charAt(0)}
+              {authorName.charAt(0)}
             </span>
           )}
-          <span className="text-sm font-medium">{article.author.name}</span>
+          <span className="text-sm font-medium">{authorName}</span>
         </div>
         <StarRating rating={article.rating} size="md" />
-        <ReviewMeta
+        <ReviewEngagementBar
+          articleId={article.id}
           engagement={article.engagement}
           publishedAt={article.publishedAt}
           locale={locale}
+          initialLiked={initialLiked}
         />
       </div>
 
@@ -70,7 +71,7 @@ export async function ReviewDetailView({
         />
       </div>
 
-      <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
+      <p className="mt-6 text-lg font-bold leading-relaxed text-foreground">
         {article.excerpt}
       </p>
 

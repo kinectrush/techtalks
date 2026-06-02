@@ -1,5 +1,6 @@
 'use client';
 
+import { mergeAttributes } from '@tiptap/core';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -13,6 +14,7 @@ import {
   ImageIcon,
   Italic,
   Link2,
+  Link as LinkIcon,
   List,
   ListOrdered,
   Quote,
@@ -50,12 +52,57 @@ function ToolbarButton({
       size="icon"
       className="h-8 w-8"
       title={title}
-      onClick={onClick}
+      onMouseDown={(e) => {
+        // Keep editor selection (avoid blur/reset before command runs)
+        e.preventDefault();
+        onClick();
+      }}
     >
       {children}
     </Button>
   );
 }
+
+const LinkedImage = Image.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      href: {
+        default: null,
+        // When rendered, images are wrapped by <a href="..."><img /></a>.
+        // Parse href from the parent <a>, not from <img>.
+        parseHTML: (element) => {
+          const el = element as HTMLElement;
+          const parent = el.parentElement;
+          const href =
+            parent?.tagName === 'A'
+              ? parent.getAttribute('href')
+              : el.getAttribute('href');
+          return href ? href : null;
+        },
+      },
+      target: {
+        default: '_blank',
+      },
+    };
+  },
+  renderHTML({ HTMLAttributes }) {
+    const { href, target, ...imgAttrs } = HTMLAttributes as Record<string, string>;
+    const mergedImgAttrs = mergeAttributes(imgAttrs);
+    if (href) {
+      return [
+        'a',
+        {
+          href,
+          target: target || '_blank',
+          rel: 'noopener noreferrer',
+        },
+        ['img', mergedImgAttrs],
+      ];
+    }
+    return ['img', mergedImgAttrs];
+  },
+});
 
 export function RichTextEditor({
   value,
@@ -72,7 +119,7 @@ export function RichTextEditor({
       }),
       Underline,
       Link.configure({ openOnClick: false }),
-      Image.configure({ inline: false, allowBase64: false }),
+      LinkedImage.configure({ inline: false, allowBase64: false }),
       Placeholder.configure({ placeholder }),
     ],
     content: value || '',
@@ -101,6 +148,21 @@ export function RichTextEditor({
     [editor],
   );
 
+  const insertImageByUrl = useCallback(
+    (url: string) => {
+      if (!editor) return;
+      const trimmed = url.trim();
+      if (!trimmed) return;
+      if (!/^https?:\/\//i.test(trimmed)) {
+        toast.error('URL ảnh phải bắt đầu bằng http/https');
+        return;
+      }
+      editor.chain().focus().setImage({ src: trimmed, alt: 'image' }).run();
+      toast.success('Đã chèn ảnh từ link');
+    },
+    [editor],
+  );
+
   if (!editor) {
     return (
       <div className="h-[320px] animate-pulse rounded-lg border bg-muted" />
@@ -108,8 +170,13 @@ export function RichTextEditor({
   }
 
   return (
-    <div className={cn('overflow-hidden rounded-lg border bg-background', className)}>
-      <div className="flex flex-wrap gap-0.5 border-b bg-muted/30 p-1">
+    <div
+      className={cn(
+        'flex max-h-[70vh] flex-col overflow-hidden rounded-lg border bg-background',
+        className,
+      )}
+    >
+      <div className="sticky top-0 z-20 flex flex-wrap gap-0.5 border-b bg-muted/30 p-1 backdrop-blur supports-[backdrop-filter]:bg-muted/20">
         <ToolbarButton
           title="In đậm"
           active={editor.isActive('bold')}
@@ -183,10 +250,50 @@ export function RichTextEditor({
           <Link2 className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
-          title="Chèn ảnh"
+          title="Gắn link cho ảnh"
+          active={editor.isActive('image') && Boolean(editor.getAttributes('image').href)}
+          onClick={() => {
+            if (!editor.isActive('image')) {
+              toast.error('Hãy chọn 1 ảnh trong nội dung trước');
+              return;
+            }
+            const prev = editor.getAttributes('image').href as string | undefined;
+            const url = window.prompt('URL khi click ảnh', prev ?? 'https://');
+            if (url === null) return;
+            const trimmed = url.trim();
+            if (trimmed === '') {
+              editor.chain().focus().updateAttributes('image', { href: null }).run();
+              return;
+            }
+            if (!/^https?:\/\//i.test(trimmed)) {
+              toast.error('URL phải bắt đầu bằng http/https');
+              return;
+            }
+            editor
+              .chain()
+              .focus()
+              .updateAttributes('image', { href: trimmed, target: '_blank' })
+              .run();
+            toast.success('Đã gắn link cho ảnh');
+          }}
+        >
+          <Link2 className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          title="Upload ảnh"
           onClick={() => fileRef.current?.click()}
         >
           <ImageIcon className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          title="Chèn ảnh từ link"
+          onClick={() => {
+            const url = window.prompt('Dán link ảnh (http/https)', 'https://');
+            if (url === null) return;
+            insertImageByUrl(url);
+          }}
+        >
+          <LinkIcon className="h-4 w-4" />
         </ToolbarButton>
       </div>
       <input
@@ -200,7 +307,9 @@ export function RichTextEditor({
           e.target.value = '';
         }}
       />
-      <EditorContent editor={editor} />
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <EditorContent editor={editor} />
+      </div>
     </div>
   );
 }

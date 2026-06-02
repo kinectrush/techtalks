@@ -50,7 +50,13 @@ export function ReviewCard({
         </span>
       ) : null}
 
-      <Link href={href} className={cn('relative shrink-0 overflow-hidden', isHorizontal ? 'h-24 w-36' : 'aspect-[16/10] w-full')}>
+      <Link
+        href={href}
+        className={cn(
+          'relative shrink-0 overflow-hidden bg-muted/20',
+          isHorizontal ? 'h-24 aspect-video' : 'aspect-video w-full',
+        )}
+      >
         <Image
           src={article.coverImage}
           alt={article.title}

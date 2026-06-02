@@ -123,6 +123,25 @@
   font-style: italic;
 }
 
+/* Tiptap lists (ensure markers visible with resets/typography) */
+.tiptap ul,
+.tiptap ol {
+  padding-left: 1.25rem;
+  margin: 1rem 0;
+}
+
+.tiptap ul {
+  list-style: disc;
+}
+
+.tiptap ol {
+  list-style: decimal;
+}
+
+.tiptap li {
+  margin: 0.25rem 0;
+}
+
 /* Published article body */
 .article-prose img {
   max-width: 100%;
@@ -153,6 +172,21 @@
 .article-prose ul,
 .article-prose ol {
   margin: 1rem 0 1rem 1.25rem;
+  padding-left: 1.25rem;
+}
+
+.article-prose ul {
+  list-style: disc;
+}
+
+.article-prose ol {
+  list-style: decimal;
+}
+
+.article-prose li::marker,
+.tiptap li::marker {
+  font-weight: 600;
+  font-size: 1em;
 }
 
 .article-prose blockquote {

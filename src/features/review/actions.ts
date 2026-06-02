@@ -21,11 +21,7 @@ async function resolveHomePageData(): Promise<HomePageData> {
   if (isSupabaseConfigured()) {
     const supabase = createSupabasePublicClientIfConfigured();
     if (supabase) {
-      try {
-        return await getHomePageDataFromSupabase(supabase);
-      } catch {
-        // fall back to mock when DB is empty or unreachable
-      }
+      return await getHomePageDataFromSupabase(supabase);
     }
   }
   return getHomePageData();
@@ -33,7 +29,7 @@ async function resolveHomePageData(): Promise<HomePageData> {
 
 export const getHomePageDataCached = unstable_cache(
   async (): Promise<HomePageData> => resolveHomePageData(),
-  ['review-home'],
+  ['review-home-v2-db'],
   { revalidate: 120, tags: ['reviews', 'trending'] },
 );
 
@@ -48,7 +44,7 @@ export async function getTrendingAction(
 export const getTrendingCached = unstable_cache(
   async (window: TrendingWindow, limit: number) =>
     getTrendingAction(window, limit),
-  ['review-trending'],
+  ['review-trending-v2-db'],
   { revalidate: 60, tags: ['trending'] },
 );
 
@@ -76,13 +72,13 @@ export async function getPublicCategoriesAction(): Promise<ReviewCategory[]> {
 
 export const getReviewsListCached = unstable_cache(
   async (categorySlug?: string) => resolvePublishedArticles(categorySlug),
-  ['review-list'],
+  ['review-list-v2-db'],
   { revalidate: 120, tags: ['reviews'] },
 );
 
 export const getReviewBySlugCached = unstable_cache(
   async (slug: string) => resolveArticleBySlug(slug),
-  ['review-detail'],
+  ['review-detail-v2-db'],
   { revalidate: 120, tags: ['reviews'] },
 );
 

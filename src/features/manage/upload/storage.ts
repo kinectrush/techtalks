@@ -8,7 +8,7 @@ import {
   MAX_IMAGE_BYTES,
 } from '@/lib/storage/constants';
 
-export type UploadFolder = 'covers' | 'og' | 'content';
+export type UploadFolder = 'covers' | 'og' | 'content' | 'editor-picks';
 
 function extFromMime(mime: string): string {
   const map: Record<string, string> = {

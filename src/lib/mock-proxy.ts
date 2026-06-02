@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server';
 
 import {
   getPublishedReviewsForClientAction,
+  getHomePageDataCached,
   getTrendingAction,
 } from '@/features/review/actions';
-import { getHomePageData } from '@/features/review/lib/review-repository';
 import type { PaginatedResponse } from '@/types/api';
 import type { Product } from '@/types/product';
 import type { ReviewSummary } from '@/types/review';
@@ -23,7 +23,7 @@ export async function handleMockProxy(
   const path = pathSegments.join('/');
 
   if (method === 'GET' && path === 'reviews/home') {
-    return NextResponse.json(getHomePageData());
+    return NextResponse.json(await getHomePageDataCached());
   }
 
   if (method === 'GET' && path === 'reviews/trending') {

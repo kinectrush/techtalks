@@ -1,5 +1,20 @@
 import { z } from 'zod';
 
+function pad2(n: number) {
+  return String(n).padStart(2, '0');
+}
+
+function isoToDatetimeLocal(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+
+function datetimeLocalToIso(value: string): string {
+  // value from <input type="datetime-local"> has no timezone → treat as local time.
+  const d = new Date(value);
+  return d.toISOString();
+}
+
 export const adminArticleSchema = z.object({
   title: z.string().min(3, 'Title is required'),
   slug: z
@@ -10,8 +25,11 @@ export const adminArticleSchema = z.object({
   excerpt: z.string().min(10, 'Excerpt is required'),
   content: z.string().optional(),
   coverImage: z.string().url('Cover image is required'),
+  editorPickCoverImageMobile: z.string().url().optional().or(z.literal('')),
+  editorPickCoverImageDesktop: z.string().url().optional().or(z.literal('')),
   ogImage: z.string().url().optional().or(z.literal('')),
   canonicalUrl: z.string().url().optional().or(z.literal('')),
+  affiliateUrl: z.string().url().optional().or(z.literal('')),
   categoryId: z.string().uuid('Select a category'),
   authorId: z.string().uuid('Select an author'),
   publishedAt: z.string().min(1, 'Published date is required'),
@@ -52,11 +70,14 @@ export function formValuesToArticleInput(
     excerpt: values.excerpt,
     content: values.content,
     coverImage: values.coverImage,
+    editorPickCoverImageMobile: values.editorPickCoverImageMobile || undefined,
+    editorPickCoverImageDesktop: values.editorPickCoverImageDesktop || undefined,
     ogImage: values.ogImage || undefined,
     canonicalUrl: values.canonicalUrl || undefined,
+    affiliateUrl: values.affiliateUrl || undefined,
     categoryId: values.categoryId,
     authorId: values.authorId,
-    publishedAt: new Date(values.publishedAt).toISOString(),
+    publishedAt: datetimeLocalToIso(values.publishedAt),
     status: values.status,
     isActive: values.isActive,
     rating: values.rating,
@@ -80,11 +101,14 @@ export function articleToFormValues(
     excerpt: article.excerpt,
     content: article.content ?? '',
     coverImage: article.coverImage,
+    editorPickCoverImageMobile: article.editorPickCoverImageMobile ?? '',
+    editorPickCoverImageDesktop: article.editorPickCoverImageDesktop ?? '',
     ogImage: article.ogImage ?? '',
     canonicalUrl: article.canonicalUrl ?? '',
+    affiliateUrl: article.affiliateUrl ?? '',
     categoryId: article.categoryId,
     authorId: article.authorId,
-    publishedAt: article.publishedAt.slice(0, 16),
+    publishedAt: isoToDatetimeLocal(article.publishedAt),
     status: article.status,
     isActive: article.isActive,
     rating: article.rating,

@@ -32,7 +32,8 @@ export function buildOpenGraphImages(path: string) {
 }
 
 export function localePageUrl(locale: Locale, pathname = ''): string {
-  const path = pathname ? `/${locale}${pathname}` : `/${locale}`;
+  // Locale prefix is disabled (single-locale site).
+  const path = pathname || '/';
   return new URL(path, env.appUrl).href;
 }
 
@@ -40,7 +41,7 @@ export function reviewsListPageUrl(
   locale: Locale,
   categorySlug?: string,
 ): string {
-  const url = new URL(`/${locale}/reviews`, env.appUrl);
+  const url = new URL('/reviews', env.appUrl);
   if (categorySlug) {
     url.searchParams.set('category', categorySlug);
   }

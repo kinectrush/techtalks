@@ -29,7 +29,9 @@ export async function TrendingSidebar({
       </h2>
 
       <ol className="space-y-3">
-        {articles.map((article) => (
+        {articles.map((article, idx) => {
+          const rank = article.hotRank ?? idx + 1;
+          return (
           <li key={article.id}>
             <Link
               href={`/review/${article.slug}`}
@@ -38,12 +40,12 @@ export async function TrendingSidebar({
               <span
                 className={cn(
                   'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-sm font-bold',
-                  article.hotRank && article.hotRank <= 3
+                  rank <= 3
                     ? 'bg-brand text-white'
                     : 'bg-muted text-muted-foreground',
                 )}
               >
-                {article.hotRank}
+                {rank}
               </span>
               <div className="min-w-0 flex-1">
                 <p className="line-clamp-2 text-sm font-medium leading-snug group-hover:text-brand">
@@ -56,7 +58,8 @@ export async function TrendingSidebar({
               </div>
             </Link>
           </li>
-        ))}
+          );
+        })}
       </ol>
     </aside>
   );

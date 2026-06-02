@@ -22,6 +22,9 @@ type ArticleRow = {
   excerpt: string;
   content: string | null;
   cover_image: string;
+  editor_pick_cover_image: string | null;
+  editor_pick_cover_image_mobile: string | null;
+  editor_pick_cover_image_desktop: string | null;
   published_at: string;
   updated_at: string | null;
   status: string;
@@ -55,6 +58,15 @@ function mapRow(row: ArticleRow): ReviewArticle {
     excerpt: row.excerpt,
     content: row.content ?? undefined,
     coverImage: row.cover_image,
+    editorPickCoverImageMobile:
+      row.editor_pick_cover_image_mobile ??
+      row.editor_pick_cover_image ??
+      undefined,
+    editorPickCoverImageDesktop:
+      row.editor_pick_cover_image_desktop ??
+      row.editor_pick_cover_image_mobile ??
+      row.editor_pick_cover_image ??
+      undefined,
     category: {
       slug: category.slug,
       name: category.name,
@@ -85,6 +97,9 @@ const ARTICLE_SELECT = `
   excerpt,
   content,
   cover_image,
+  editor_pick_cover_image,
+  editor_pick_cover_image_mobile,
+  editor_pick_cover_image_desktop,
   published_at,
   updated_at,
   status,

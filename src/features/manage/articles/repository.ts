@@ -10,8 +10,12 @@ type DbArticle = {
   excerpt: string;
   content: string | null;
   cover_image: string;
+  editor_pick_cover_image: string | null;
+  editor_pick_cover_image_mobile: string | null;
+  editor_pick_cover_image_desktop: string | null;
   og_image: string | null;
   canonical_url: string | null;
+  affiliate_links?: { platform: string; url: string; label?: string }[] | null;
   category_id: string;
   author_id: string;
   published_at: string;
@@ -40,6 +44,10 @@ function pickName(
 }
 
 function mapArticle(row: DbArticle): AdminArticleRow {
+  const affiliateUrl =
+    row.affiliate_links?.[0]?.url && typeof row.affiliate_links[0].url === 'string'
+      ? row.affiliate_links[0].url
+      : null;
   return {
     id: row.id,
     slug: row.slug,
@@ -48,8 +56,15 @@ function mapArticle(row: DbArticle): AdminArticleRow {
     excerpt: row.excerpt,
     content: row.content,
     coverImage: row.cover_image,
+    editorPickCoverImageMobile:
+      row.editor_pick_cover_image_mobile ?? row.editor_pick_cover_image,
+    editorPickCoverImageDesktop:
+      row.editor_pick_cover_image_desktop ??
+      row.editor_pick_cover_image_mobile ??
+      row.editor_pick_cover_image,
     ogImage: row.og_image,
     canonicalUrl: row.canonical_url,
+    affiliateUrl,
     categoryId: row.category_id,
     authorId: row.author_id,
     categoryName: pickName(row.categories),
@@ -76,8 +91,14 @@ function toDbPayload(input: AdminArticleInput, partial = false) {
     excerpt: input.excerpt,
     content: input.content ?? null,
     cover_image: input.coverImage,
+    editor_pick_cover_image: null,
+    editor_pick_cover_image_mobile: input.editorPickCoverImageMobile ?? null,
+    editor_pick_cover_image_desktop: input.editorPickCoverImageDesktop ?? null,
     og_image: input.ogImage ?? null,
     canonical_url: input.canonicalUrl ?? null,
+    affiliate_links: input.affiliateUrl?.trim()
+      ? [{ platform: 'other', url: input.affiliateUrl.trim(), label: 'Affiliate' }]
+      : [],
     category_id: input.categoryId,
     author_id: input.authorId,
     published_at: input.publishedAt,
@@ -114,7 +135,7 @@ function toDbPayload(input: AdminArticleInput, partial = false) {
 
 const SELECT = `
   id, slug, title, subtitle, excerpt, content,
-  cover_image, og_image, canonical_url,
+  cover_image, editor_pick_cover_image, editor_pick_cover_image_mobile, editor_pick_cover_image_desktop, og_image, canonical_url, affiliate_links,
   category_id, author_id, published_at, updated_at,
   status, is_active, rating, pros, cons, tags,
   meta_title, meta_description, meta_keywords,

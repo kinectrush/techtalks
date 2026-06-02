@@ -19,12 +19,8 @@ export async function resolvePublicCategories(): Promise<ReviewCategory[]> {
   if (isSupabaseConfigured()) {
     const supabase = createSupabasePublicClientIfConfigured();
     if (supabase) {
-      try {
-        const categories = await fetchActiveCategories(supabase);
-        if (categories.length > 0) return categories;
-      } catch {
-        // fall through to mock
-      }
+      const categories = await fetchActiveCategories(supabase);
+      return categories;
     }
   }
   return getMockCategories();
@@ -36,15 +32,9 @@ export async function resolvePublishedArticles(
   if (isSupabaseConfigured()) {
     const supabase = createSupabasePublicClientIfConfigured();
     if (supabase) {
-      try {
-        const articles = await fetchPublishedArticles(supabase, {
-          categorySlug,
-        });
-        if (articles.length > 0) return enrichSummaries(articles);
-        if (categorySlug) return [];
-      } catch {
-        // fall through to mock
-      }
+      const articles = await fetchPublishedArticles(supabase, { categorySlug });
+      // If DB is configured, always prefer DB results (even empty).
+      return enrichSummaries(articles);
     }
   }
   return getAllSummaries(categorySlug);
@@ -56,21 +46,17 @@ export async function resolveArticleBySlug(
   if (isSupabaseConfigured()) {
     const supabase = createSupabasePublicClientIfConfigured();
     if (supabase) {
-      try {
-        const article = await fetchPublishedArticleBySlug(supabase, slug);
-        if (article) {
-          const withContent = article.content?.trim()
-            ? article
-            : {
-                ...article,
-                content: getMockArticleContent(article.slug),
-              };
-          return enrichSummaries([withContent])[0] ?? null;
-        }
-        return null;
-      } catch {
-        // fall through to mock
+      const article = await fetchPublishedArticleBySlug(supabase, slug);
+      if (article) {
+        const withContent = article.content?.trim()
+          ? article
+          : {
+              ...article,
+              content: getMockArticleContent(article.slug),
+            };
+        return enrichSummaries([withContent])[0] ?? null;
       }
+      return null;
     }
   }
   return getArticleBySlug(slug) ?? null;

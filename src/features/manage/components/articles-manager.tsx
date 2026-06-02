@@ -1,6 +1,7 @@
 'use client';
 
 import { Pencil, Plus, Search } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useCallback, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 
@@ -16,7 +17,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ArticleFormDialog } from '@/features/manage/components/article-form-dialog';
 import {
   listArticlesAction,
   toggleArticleActiveAction,
@@ -36,10 +36,9 @@ export function ArticlesManager({
   categories,
   authors,
 }: ArticlesManagerProps) {
+  const router = useRouter();
   const [articles, setArticles] = useState(initialArticles);
   const [search, setSearch] = useState('');
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<AdminArticleRow | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const refresh = useCallback(() => {
@@ -54,13 +53,11 @@ export function ArticlesManager({
   }, [search]);
 
   function openCreate() {
-    setEditing(null);
-    setDialogOpen(true);
+    router.push('/manage/admin/articles/new');
   }
 
   function openEdit(article: AdminArticleRow) {
-    setEditing(article);
-    setDialogOpen(true);
+    router.push(`/manage/admin/articles/${article.id}`);
   }
 
   async function handleToggleActive(id: string, isActive: boolean) {
@@ -163,14 +160,6 @@ export function ArticlesManager({
         </Table>
       </div>
 
-      <ArticleFormDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        article={editing}
-        categories={categories}
-        authors={authors}
-        onSaved={refresh}
-      />
     </div>
   );
 }

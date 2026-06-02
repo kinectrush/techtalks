@@ -35,6 +35,14 @@ function isAdminProtectedPath(pathname: string): boolean {
 export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
+  // Redirect legacy locale-prefixed URLs (/vi/*, /en/*) to new non-prefixed routes.
+  const legacyPath = stripLocale(pathname);
+  if (legacyPath !== pathname) {
+    const url = request.nextUrl.clone();
+    url.pathname = legacyPath === '/' ? '/' : legacyPath;
+    return NextResponse.redirect(url, 308);
+  }
+
   if (pathname.startsWith('/manage')) {
     if (isAdminProtectedPath(pathname)) {
       const token = request.cookies.get(ADMIN_AUTH_COOKIE)?.value;
@@ -49,7 +57,7 @@ export function proxy(request: NextRequest) {
   }
 
   const response = intlMiddleware(request);
-  const pathWithoutLocale = stripLocale(pathname);
+  const pathWithoutLocale = pathname;
   const isPublic = SITE_PUBLIC_PATHS.some((p) =>
     pathWithoutLocale.startsWith(p),
   );
@@ -58,10 +66,7 @@ export function proxy(request: NextRequest) {
   if (isProtected && !isPublic) {
     const token = request.cookies.get(SITE_AUTH_COOKIE)?.value;
     if (!token) {
-      const locale =
-        routing.locales.find((l) => pathname.startsWith(`/${l}`)) ??
-        routing.defaultLocale;
-      const loginUrl = new URL(`/${locale}/login`, request.url);
+      const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('callbackUrl', pathname);
       return NextResponse.redirect(loginUrl);
     }
@@ -73,7 +78,6 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     '/',
-    '/(vi|en)/:path*',
     '/manage/:path*',
     '/((?!api|_next|_next/static|_next/image|favicon.ico|.*\\..*).*)',
   ],
