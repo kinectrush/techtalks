@@ -1,0 +1,30 @@
+---
+description: Tailwind v4, shadcn/ui, and CSS variables
+globs: src/app/globals.css,src/components/ui/**/*,components.json
+alwaysApply: false
+---
+
+# Styling & shadcn/ui
+
+## Tailwind v4
+
+- Global styles: `src/app/globals.css` — `@import 'tailwindcss'` + CSS variables (`:root`, `.dark`)
+- Use semantic tokens: `bg-background`, `text-foreground`, `border-border`, `text-muted-foreground`
+- Merge classes with `cn()` from `@/lib/utils` (clsx + tailwind-merge)
+
+## shadcn/ui
+
+- Config: `components.json` (style: new-york, RSC: true)
+- Add components: `npx shadcn@latest add <name>` — place in `src/components/ui/`
+- Extend variants via `class-variance-authority` (see `button.tsx`)
+
+## Responsive & a11y
+
+- Mobile: sidebar hidden on small screens; `Menu` toggles `useUiStore` for future sheet/drawer
+- Interactive controls need visible focus (`focus-visible:ring-2`)
+- Use `sr-only` for icon-only buttons
+
+## Do not
+
+- Introduce CSS-in-JS libraries or duplicate color tokens outside `globals.css`
+- Use inline styles for layout that Tailwind utilities cover

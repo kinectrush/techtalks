@@ -1,0 +1,39 @@
+---
+description: React 19 components, shadcn/ui, layout, themes, loading and errors
+globs: "**/*.tsx"
+alwaysApply: false
+---
+
+# React & UI
+
+## Components
+
+- **Server Components by default** — add `'use client'` only for hooks, events, browser APIs
+- `components/ui/` — shadcn primitives (use `cn()` from `@/lib/utils`)
+- `components/common/` — LanguageSwitcher, ThemeToggle, LoadingSpinner, ErrorMessage
+- `components/layout/` — DashboardShell, AppSidebar, AppNavbar
+- `components/forms/` — RHF forms
+- Domain UI lives in `features/<domain>/components/`
+
+## Layout
+
+- Locale shell: `src/app/[locale]/layout.tsx` — `<html>`, fonts, `Providers`
+- Dashboard routes use `(dashboard)/layout.tsx` + `DashboardShell` (sidebar + navbar + switcher)
+- Auth routes use `(auth)/layout.tsx` — centered card, no dashboard chrome
+
+## Theme & feedback
+
+- Dark mode: `ThemeScript` in locale `layout.tsx` (server) + `ThemeProvider` in `providers.tsx` (no `<script>` in client tree — React 19); toggle in `theme-toggle.tsx`
+- Toasts: `sonner` — `toast.success()` / `toast.error()`; `<Toaster />` only in `providers.tsx`
+- Route-level: `loading.tsx`, `error.tsx` under `[locale]/`
+
+## Icons
+
+- Use `lucide-react` only; consistent `className="h-4 w-4"` in buttons
+
+## New pages checklist
+
+1. Place under `src/app/[locale]/...`
+2. Call `setRequestLocale(locale)` + `generateStaticParams` for locales when static
+3. All user-visible strings via next-intl
+4. Protected routes under `/dashboard` (guarded in `src/proxy.ts`)

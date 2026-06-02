@@ -1,0 +1,41 @@
+---
+description: Stack, folder layout, and non-negotiable conventions for this Next.js boilerplate
+alwaysApply: true
+---
+
+# Project overview
+
+Production-ready **Next.js App Router** boilerplate (Next.js 16+, React 19, TypeScript **strict**).
+
+## Stack (do not swap without explicit user request)
+
+| Concern | Library |
+|---------|---------|
+| UI | Tailwind CSS v4, shadcn/ui, Radix UI, Lucide |
+| i18n | next-intl (`vi` default, `en`) |
+| Client state | Zustand + `persist` middleware |
+| Client fetch | SWR (via `/api/proxy`) |
+| Forms | React Hook Form + Zod (`@hookform/resolvers`) |
+| Theme / toast | next-themes, Sonner |
+| HTTP (client) | Axios → `src/lib/axios-client.ts` only |
+
+## Directory layout (`src/`)
+
+- `app/[locale]/` — locale-scoped routes; route groups `(auth)`, `(dashboard)`
+- `app/api/` — `proxy/[...path]`, `auth/*` (never expose `API_BASE_URL` to browser)
+- `features/<domain>/` — actions, domain components (auth, product, user, dashboard)
+- `components/{ui,common,layout,forms}/`
+- `i18n/` — `routing.ts`, `request.ts`, `navigation.ts`, `messages/*.json`
+- `stores/`, `swr/`, `hooks/`, `apis/`, `services/`, `lib/`, `types/`
+- `proxy.ts` — locale routing + auth guard (Next.js 16; not `middleware.ts`)
+
+## Next.js docs
+
+This repo may differ from training data. Before changing routing, caching, or proxy/middleware APIs, read `node_modules/next/dist/docs/` and heed deprecations (e.g. `proxy` vs `middleware`).
+
+## Code style
+
+- Minimal diff; match existing patterns; no drive-by refactors
+- Path alias: `@/*` → `src/*`
+- Run `npm run typecheck` after non-trivial TS changes
+- Do not commit `.env.local` or secrets; keep `.env.example` in sync

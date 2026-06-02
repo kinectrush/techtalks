@@ -1,0 +1,110 @@
+'use client';
+
+import { Eye } from 'lucide-react';
+import { useState } from 'react';
+
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import type { AdminContactMessage } from '@/types/admin';
+
+type MessagesManagerProps = {
+  initialMessages: AdminContactMessage[];
+};
+
+export function MessagesManager({ initialMessages }: MessagesManagerProps) {
+  const [messages] = useState(initialMessages);
+  const [active, setActive] = useState<AdminContactMessage | null>(null);
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">Tin nhắn liên hệ</h1>
+        <p className="text-sm text-muted-foreground">
+          Danh sách tin nhắn người dùng gửi từ footer.
+        </p>
+      </div>
+
+      <div className="rounded-lg border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Tiêu đề</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Thời gian</TableHead>
+              <TableHead className="w-[80px]" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {messages.map((m) => (
+              <TableRow key={m.id}>
+                <TableCell className="whitespace-normal">
+                  <p className="line-clamp-2 font-medium">{m.title}</p>
+                  <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                    {m.content}
+                  </p>
+                </TableCell>
+                <TableCell>{m.email}</TableCell>
+                <TableCell>
+                  {new Date(m.createdAt).toLocaleString()}
+                </TableCell>
+                <TableCell>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setActive(m)}
+                    aria-label="Xem"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+            {messages.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="py-10 text-center">
+                  <span className="text-sm text-muted-foreground">
+                    Chưa có tin nhắn nào.
+                  </span>
+                </TableCell>
+              </TableRow>
+            ) : null}
+          </TableBody>
+        </Table>
+      </div>
+
+      <Dialog open={Boolean(active)} onOpenChange={() => setActive(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{active?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 text-sm">
+            <p className="text-muted-foreground">{active?.email}</p>
+            <p className="whitespace-pre-wrap leading-relaxed">
+              {active?.content}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setActive(null)}>
+              Đóng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+

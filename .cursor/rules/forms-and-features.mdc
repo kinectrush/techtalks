@@ -1,0 +1,51 @@
+---
+description: React Hook Form + Zod, feature modules, and auth flow
+globs: src/components/forms/**/*,src/features/**/*,src/hooks/use-*-schema.ts
+alwaysApply: false
+---
+
+# Forms & feature modules
+
+## Forms (RHF + Zod)
+
+```tsx
+'use client';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+const schema = useXxxSchema(); // Zod schema with translated messages
+const form = useForm({ resolver: zodResolver(schema) });
+```
+
+- Schemas in hooks (e.g. `useLoginSchema`) when messages depend on `useTranslations`
+- Show field errors under inputs; submit errors via Sonner
+- Reference: `src/components/forms/login-form.tsx`
+
+## Feature module layout
+
+```
+src/features/<name>/
+  actions.ts          # 'use server' mutations / cached reads
+  components/         # domain-specific UI
+  index.ts            # public exports
+```
+
+- **auth** — `loginAction`, `logoutAction`; cookie handling
+- **product** — ISR list + client list components
+- **user** — types/re-exports; profile via SWR `/users/me`
+- New domains: follow same split; avoid dumping logic in `app/` pages
+
+## Auth flow
+
+1. Submit → `/api/auth/login` (sets HttpOnly cookies) + Zustand `setUser`
+2. Protected pages: `proxy.ts` checks `access_token` cookie → redirect to `/[locale]/login`
+3. Logout → `/api/auth/logout` + `authService.logout()` + redirect login
+4. Client 401 → `axios-client` interceptor calls `/api/auth/refresh` once
+
+## Adding a feature
+
+1. Types in `src/types/`
+2. `apis/` + optional `services/` for client calls
+3. Server logic in `features/*/actions.ts`
+4. Page in `app/[locale]/` composes server + client pieces
+5. i18n keys in both `vi.json` and `en.json`

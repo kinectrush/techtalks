@@ -1,0 +1,42 @@
+---
+description: next-intl routing, messages, Server/Client usage, and language switcher
+globs: src/i18n/**/*,src/app/[locale]/**/*,src/components/**/*,src/global.d.ts
+alwaysApply: false
+---
+
+# Internationalization (next-intl)
+
+## Routing
+
+- Locales: `vi` (default), `en` — config in `src/i18n/routing.ts`
+- URLs **always** prefixed: `/vi/...`, `/en/...` (`localePrefix: 'always'`)
+- Locale-aware navigation: import `Link`, `useRouter`, `usePathname` from `@/i18n/navigation` — **not** from `next/navigation` for in-app links
+- Detection: `localeDetection: true` in routing + `createMiddleware` in `src/proxy.ts`
+- Time zone: `defaultTimeZone` in `src/i18n/config.ts` — returned from `request.ts` and passed to `NextIntlClientProvider`
+
+## Messages
+
+- JSON only: `src/i18n/messages/vi.json`, `en.json`
+- Add keys to **both** locales; keep structure identical for type-safety
+- After schema changes, verify `src/global.d.ts` (`AppConfig.Messages` from `vi.json`)
+
+## Usage
+
+```tsx
+// Server Component
+import { getTranslations, setRequestLocale } from 'next-intl/server';
+setRequestLocale(locale); // in page/layout after validating locale
+const t = await getTranslations('Namespace');
+
+// Client Component
+'use client';
+import { useTranslations } from 'next-intl';
+const t = useTranslations('Namespace');
+```
+
+- Pass messages to client via `Providers` (`src/providers.tsx`) — do not duplicate `NextIntlClientProvider` in layouts
+- Language switcher pattern: `src/components/common/language-switcher.tsx` — `router.replace(pathname, { locale })`
+
+## Validation copy
+
+Zod messages must be localized — use hooks like `useLoginSchema()` with `useTranslations('Validation')`, not hardcoded strings.

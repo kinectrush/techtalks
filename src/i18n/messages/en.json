@@ -1,0 +1,105 @@
+{
+  "Metadata": {
+    "title": "TechTalks — Where We Talk Tech",
+    "description": "Discover and discuss what's new in smartphones, laptops, audio, and smart home tech. Join the TechTalks community today.",
+    "keywords": "techtalks, talk tech, smartphone reviews, laptop discussion, audio gear, smart home technology",
+    "twitterDescription": "Discover and discuss what's new in smartphones, laptops, audio, and smart home tech."
+  },
+  "Common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "save": "Save",
+    "cancel": "Cancel",
+    "logout": "Log out",
+    "theme": "Theme",
+    "language": "Language"
+  },
+  "Site": {
+    "siteName": "TechTalks",
+    "tagline": "Where we talk tech — discover and discuss what's new together.",
+    "navHome": "Home",
+    "navReviews": "Articles",
+    "search": "Search",
+    "bookmarks": "Bookmarks",
+    "login": "Sign in",
+    "rights": "All rights reserved."
+  },
+  "Review": {
+    "badgeHot": "Hot",
+    "badgeNew": "New",
+    "badgeTrending": "Trending",
+    "trending24h": "Hot in 24h",
+    "topTrending7d": "Top trending (7 days)",
+    "latestPosts": "Latest articles",
+    "viewAll": "View all",
+    "allReviews": "All",
+    "readReview": "Read article",
+    "editorPick": "Editor's pick",
+    "categories": "Categories",
+    "views": "views",
+    "comingSoon": "Content coming soon",
+    "contentEmpty": "This article has no detailed body yet.",
+    "allCategories": "All",
+    "filterByCategory": "Filter by category",
+    "reviewsInCategory": "{name}",
+    "unknownCategory": "Category not found.",
+    "noReviews": "No articles in this category yet.",
+    "categoryMeta": {
+      "congNghe": {
+        "title": "Tech: News, Discussions & Insights — TechTalks",
+        "description": "Stay updated with the latest tech trends. Dive into deep discussions about smartphones, laptops, audio, and hardware gadgets.",
+        "ogDescription": "Stay updated with the latest tech trends. Dive into deep discussions about smartphones, laptops, audio, and hardware gadgets."
+      },
+      "theThao": {
+        "title": "Sports & Fitness Equipment — TechTalks",
+        "description": "In-depth reviews and practical experiences with sports technology, running equipment, tracking devices, and fitness accessories.",
+        "ogDescription": "In-depth reviews and practical experiences with sports technology, running equipment, tracking devices, and fitness accessories."
+      }
+    }
+  },
+  "Navigation": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "products": "Products",
+    "reviews": "Articles",
+    "login": "Log in",
+    "profile": "Profile"
+  },
+  "Home": {
+    "title": "TechTalks",
+    "subtitle": "Talking tech — explore and discuss together",
+    "cta": "Explore now"
+  },
+  "Auth": {
+    "loginTitle": "Sign in",
+    "loginSubtitle": "Enter your credentials to continue",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in",
+    "success": "Signed in successfully",
+    "error": "Sign in failed"
+  },
+  "Dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Demo account — browse published articles from Supabase or mock data.",
+    "welcome": "Hello, {name}!",
+    "serverFetched": "Data from Server Component (ISR)",
+    "swrTitle": "Client data with SWR",
+    "latestReviews": "Latest articles (server)",
+    "reviewsTitle": "Article list",
+    "reviewsSubtitle": "Loaded via SWR — same source as the public site.",
+    "reviewsEmpty": "No published articles yet.",
+    "reviewCount": "{count} published articles"
+  },
+  "Products": {
+    "title": "Products",
+    "empty": "No products found"
+  },
+  "Validation": {
+    "emailRequired": "Email is required",
+    "emailInvalid": "Invalid email address",
+    "passwordRequired": "Password is required",
+    "passwordMin": "Password must be at least {min} characters"
+  }
+}

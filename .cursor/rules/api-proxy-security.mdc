@@ -1,0 +1,39 @@
+---
+description: API proxy, auth cookies, and server-only backend URL
+globs: src/app/api/**/*,src/lib/axios*.ts,src/lib/api-proxy.ts,src/lib/mock-proxy.ts,src/lib/env.ts,src/lib/constants.ts
+alwaysApply: false
+---
+
+# API proxy & security
+
+## Golden rules
+
+1. **Browser never calls `API_BASE_URL`** — only `/api/proxy/*` via `axiosClient`
+2. **`API_BASE_URL` is server-only** — `getServerApiBaseUrl()` in Route Handlers, Server Actions, `createServerAxios()`
+3. **Tokens in HttpOnly cookies** — `access_token`, `refresh_token` (`src/lib/constants.ts`); do not persist tokens in Zustand/localStorage
+
+## Client HTTP
+
+```ts
+// ✅ Client components, SWR fetcher, apis/*
+import { axiosClient } from '@/lib/axios-client'; // baseURL: /api/proxy
+
+// ❌ Never in client code
+axios.get(process.env.API_BASE_URL + '/users');
+```
+
+## Proxy route
+
+- Entry: `src/app/api/proxy/[...path]/route.ts` → `proxyRequest()` / `handleMockProxy()` when `USE_MOCK_API=true`
+- Forward `Authorization` from cookies; handle 401 refresh server-side in `api-proxy.ts`
+
+## Auth routes
+
+- `/api/auth/login`, `logout`, `refresh` — set/clear cookies via `src/features/auth/actions.ts`
+- After login: update Zustand `user` from response body only (not access token)
+
+## Adding endpoints
+
+1. Add mock branch in `mock-proxy.ts` if using mock mode
+2. Add `swrKeys` / `apis/*` path relative to proxy root (e.g. `/products` → `/api/proxy/products`)
+3. Document new env vars in `.env.example`

@@ -1,0 +1,105 @@
+{
+  "Metadata": {
+    "title": "TechTalks — Trò chuyện và chia sẻ công nghệ",
+    "description": "Nơi chia sẻ, bàn luận và đánh giá mới nhất về smartphone, laptop, audio và smart home. Cùng TechTalks khám phá xu hướng công nghệ mỗi ngày.",
+    "keywords": "techtalks, trò chuyện công nghệ, đánh giá smartphone, bàn luận laptop, thiết bị âm thanh, smart home việt nam",
+    "twitterDescription": "Nơi chia sẻ, bàn luận và đánh giá mới nhất về smartphone, laptop, audio và smart home."
+  },
+  "Common": {
+    "loading": "Đang tải...",
+    "error": "Đã xảy ra lỗi",
+    "retry": "Thử lại",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "logout": "Đăng xuất",
+    "theme": "Giao diện",
+    "language": "Ngôn ngữ"
+  },
+  "Site": {
+    "siteName": "TechTalks",
+    "tagline": "Nơi trò chuyện và chia sẻ về công nghệ — cùng nhau khám phá tin mới mỗi ngày.",
+    "navHome": "Trang chủ",
+    "navReviews": "Bài viết",
+    "search": "Tìm kiếm",
+    "bookmarks": "Đã lưu",
+    "login": "Đăng nhập",
+    "rights": "Mọi quyền được bảo lưu."
+  },
+  "Review": {
+    "badgeHot": "Hot",
+    "badgeNew": "New",
+    "badgeTrending": "Trending",
+    "trending24h": "Đang hot 24h",
+    "topTrending7d": "Top trending 7 ngày",
+    "latestPosts": "Bài viết mới nhất",
+    "viewAll": "Xem tất cả",
+    "allReviews": "Tất cả",
+    "readReview": "Đọc bài",
+    "editorPick": "Biên tập chọn",
+    "categories": "Danh mục",
+    "views": "lượt xem",
+    "comingSoon": "Nội dung đang được cập nhật",
+    "contentEmpty": "Bài viết chưa có nội dung chi tiết.",
+    "allCategories": "Tất cả",
+    "filterByCategory": "Lọc theo danh mục",
+    "reviewsInCategory": "{name}",
+    "unknownCategory": "Không tìm thấy danh mục này.",
+    "noReviews": "Chưa có bài viết trong mục này.",
+    "categoryMeta": {
+      "congNghe": {
+        "title": "Công nghệ: Tin tức, Đánh giá & Thảo luận — TechTalks",
+        "description": "Cập nhật xu hướng công nghệ mới nhất. Nơi bàn luận sôi nổi về smartphone, laptop, tai nghe và các thiết bị phần cứng hàng đầu.",
+        "ogDescription": "Cập nhật xu hướng công nghệ mới nhất. Bàn luận sôi nổi về smartphone, laptop, tai nghe và thiết bị phần cứng."
+      },
+      "theThao": {
+        "title": "Thể thao & Thiết bị vận động — TechTalks",
+        "description": "Góc chia sẻ, đánh giá trải nghiệm thực tế các thiết bị công nghệ hỗ trợ thể thao, chạy bộ, tracking và phụ kiện vận động.",
+        "ogDescription": "Góc chia sẻ, đánh giá trải nghiệm thực tế các thiết bị công nghệ hỗ trợ thể thao, chạy bộ, tracking và phụ kiện vận động."
+      }
+    }
+  },
+  "Navigation": {
+    "home": "Trang chủ",
+    "dashboard": "Bảng điều khiển",
+    "products": "Sản phẩm",
+    "reviews": "Bài viết",
+    "login": "Đăng nhập",
+    "profile": "Hồ sơ"
+  },
+  "Home": {
+    "title": "TechTalks",
+    "subtitle": "Trò chuyện công nghệ — cùng bàn, cùng khám phá",
+    "cta": "Khám phá ngay"
+  },
+  "Auth": {
+    "loginTitle": "Đăng nhập",
+    "loginSubtitle": "Nhập thông tin để tiếp tục",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "submit": "Đăng nhập",
+    "success": "Đăng nhập thành công",
+    "error": "Đăng nhập thất bại"
+  },
+  "Dashboard": {
+    "title": "Bảng điều khiển",
+    "subtitle": "Tài khoản demo — xem danh sách bài viết từ Supabase hoặc dữ liệu mẫu.",
+    "welcome": "Xin chào, {name}!",
+    "serverFetched": "Dữ liệu từ Server Component (ISR)",
+    "swrTitle": "Dữ liệu client với SWR",
+    "latestReviews": "Bài mới (server)",
+    "reviewsTitle": "Danh sách bài viết",
+    "reviewsSubtitle": "Tải lại qua SWR — cùng nguồn với trang công khai.",
+    "reviewsEmpty": "Chưa có bài viết.",
+    "reviewCount": "{count} bài đã xuất bản"
+  },
+  "Products": {
+    "title": "Sản phẩm",
+    "empty": "Không có sản phẩm"
+  },
+  "Validation": {
+    "emailRequired": "Email là bắt buộc",
+    "emailInvalid": "Email không hợp lệ",
+    "passwordRequired": "Mật khẩu là bắt buộc",
+    "passwordMin": "Mật khẩu tối thiểu {min} ký tự"
+  }
+}

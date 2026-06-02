@@ -1,0 +1,38 @@
+---
+description: Zustand, SWR, Server Actions, and Next.js caching boundaries
+globs: src/stores/**/*,src/swr/**/*,src/hooks/**/*,src/features/**/actions.ts,src/services/**/*
+alwaysApply: false
+---
+
+# State & data fetching
+
+## Responsibility split
+
+| Layer | Use for |
+|-------|---------|
+| **Server Component / `unstable_cache` / Server Actions** | SSR, SSG, ISR, SEO lists, mutations that set cookies |
+| **SWR** | Client revalidation, interactive dashboards, stale-while-revalidate UI |
+| **Zustand (+ persist)** | UI prefs (`ui-store`), cached **user profile** for display (`auth-store`) |
+
+## Zustand
+
+- Stores in `src/stores/`; use `persist` only when needed; `partialize` to avoid secrets
+- **Never** store `accessToken` / `refreshToken` in Zustand — cookies only
+- Cross-cutting updates: `useAuthStore.getState().setUser()` from services after API success
+
+## SWR
+
+- Global config: `src/swr/config.ts` — shared `fetcher` uses `axiosClient`
+- Keys centralized: `src/swr/keys.ts` — no magic strings in components
+- Wrap app with `SWRConfig` in `src/providers.tsx`
+- After auth-changing mutations: `mutate(swrKeys.currentUser)` or `logout` + clear cache
+
+## Server cache example
+
+```ts
+// features/*/actions.ts
+import { unstable_cache } from 'next/cache';
+export const getX = unstable_cache(fn, ['key'], { revalidate: 60, tags: ['tag'] });
+```
+
+Do not duplicate the same list in SWR and server cache without a documented reason — prefer server-first for static/ISR, SWR for client-driven refresh.
