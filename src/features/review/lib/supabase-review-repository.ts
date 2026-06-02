@@ -22,9 +22,9 @@ type ArticleRow = {
   excerpt: string;
   content: string | null;
   cover_image: string;
-  editor_pick_cover_image: string | null;
-  editor_pick_cover_image_mobile: string | null;
-  editor_pick_cover_image_desktop: string | null;
+  editor_pick_cover_image?: string | null;
+  editor_pick_cover_image_mobile?: string | null;
+  editor_pick_cover_image_desktop?: string | null;
   published_at: string;
   updated_at: string | null;
   status: string;
@@ -39,6 +39,8 @@ type ArticleRow = {
   categories: CategoryRow | CategoryRow[] | null;
   authors: AuthorRow | AuthorRow[] | null;
 };
+
+type PostgrestErrorLike = { code?: string; message?: string } | null;
 
 function pickOne<T>(value: T | T[] | null | undefined): T {
   if (value == null) {
@@ -115,6 +117,33 @@ const ARTICLE_SELECT = `
   authors ( id, name, avatar_url )
 `;
 
+// Backward compatible select for when migrations haven't run yet (missing columns → 42703).
+const ARTICLE_SELECT_LEGACY = `
+  id,
+  slug,
+  title,
+  excerpt,
+  content,
+  cover_image,
+  published_at,
+  updated_at,
+  status,
+  rating,
+  pros,
+  cons,
+  tags,
+  series,
+  affiliate_links,
+  engagement,
+  is_editor_pick,
+  categories ( id, slug, name ),
+  authors ( id, name, avatar_url )
+`;
+
+function isMissingColumnError(error: PostgrestErrorLike): boolean {
+  return Boolean(error && error.code === '42703');
+}
+
 export type FetchPublishedArticlesOptions = {
   categorySlug?: string;
 };
@@ -123,13 +152,16 @@ export async function fetchPublishedArticles(
   supabase: SupabaseClient,
   options?: FetchPublishedArticlesOptions,
 ): Promise<ReviewArticle[]> {
-  let query = supabase
-    .from('review_articles')
-    .select(ARTICLE_SELECT)
-    .eq('status', 'published')
-    .eq('is_active', true)
-    .order('published_at', { ascending: false });
+  function build(select: string) {
+    return supabase
+      .from('review_articles')
+      .select(select)
+      .eq('status', 'published')
+      .eq('is_active', true)
+      .order('published_at', { ascending: false });
+  }
 
+  let categoryId: string | null = null;
   if (options?.categorySlug) {
     if (
       EXCLUDED_PUBLIC_CATEGORY_SLUGS.includes(
@@ -148,11 +180,21 @@ export async function fetchPublishedArticles(
 
     if (categoryError) throw categoryError;
     if (!category) return [];
-
-    query = query.eq('category_id', category.id);
+    categoryId = category.id;
   }
 
-  const { data, error } = await query;
+  const run = async (select: string) => {
+    let q = build(select);
+    if (categoryId) q = q.eq('category_id', categoryId);
+    return await q;
+  };
+
+  let { data, error } = await run(ARTICLE_SELECT);
+  if (isMissingColumnError(error as PostgrestErrorLike)) {
+    const retry = await run(ARTICLE_SELECT_LEGACY);
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) throw error;
   return ((data ?? []) as unknown as ArticleRow[]).map(mapRow);
@@ -162,17 +204,29 @@ export async function fetchPublishedArticleBySlug(
   supabase: SupabaseClient,
   slug: string,
 ): Promise<ReviewArticle | null> {
-  const { data, error } = await supabase
+  let { data, error } = (await supabase
     .from('review_articles')
     .select(ARTICLE_SELECT)
     .eq('slug', slug)
     .eq('status', 'published')
     .eq('is_active', true)
-    .maybeSingle();
+    .maybeSingle()) as unknown as { data: unknown; error: unknown };
 
-  if (error) throw error;
+  if (isMissingColumnError(error as PostgrestErrorLike)) {
+    const retry = (await supabase
+      .from('review_articles')
+      .select(ARTICLE_SELECT_LEGACY)
+      .eq('slug', slug)
+      .eq('status', 'published')
+      .eq('is_active', true)
+      .maybeSingle()) as unknown as { data: unknown; error: unknown };
+    data = retry.data;
+    error = retry.error;
+  }
+
+  if (error) throw error as never;
   if (!data) return null;
-  return mapRow(data as unknown as ArticleRow);
+  return mapRow(data as ArticleRow);
 }
 
 export async function fetchActiveCategories(
