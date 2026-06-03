@@ -2,11 +2,12 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
 
-import { getReviewBySlugCached } from '@/features/review/actions';
 import { ReviewDetailView } from '@/features/review/components/review-detail-view';
+import { getPublishedReviewBySlug } from '@/features/review/queries/get-published-review-by-slug';
 import { buildReviewDetailMetadata } from '@/lib/site-assets';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 const locale = 'vi' as const;
 
@@ -18,7 +19,7 @@ export async function generateMetadata({
   params,
 }: ReviewDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const article = await getReviewBySlugCached(slug);
+  const article = await getPublishedReviewBySlug(slug);
   if (!article) return {};
 
   return buildReviewDetailMetadata(article, locale);
@@ -29,7 +30,7 @@ export default async function ReviewDetailPage({
 }: ReviewDetailPageProps) {
   setRequestLocale(locale);
   const { slug } = await params;
-  const article = await getReviewBySlugCached(slug);
+  const article = await getPublishedReviewBySlug(slug);
 
   if (!article) notFound();
 

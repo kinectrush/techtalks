@@ -13,7 +13,7 @@ export const SITE_ASSETS = {
 } as const;
 
 export function absoluteAssetUrl(path: string): string {
-  return new URL(path, env.appUrl).href;
+  return new URL(path, siteOrigin()).href;
 }
 
 export function absoluteMediaUrl(url: string): string {
@@ -43,8 +43,23 @@ export function buildOpenGraphImagesFromUrl(imageUrl: string, alt = 'TechTalks')
   return [{ url, width: 1200, height: 630, alt }];
 }
 
+const FALLBACK_SITE_ORIGIN = 'https://www.techtalks.io.vn';
+
+function siteOrigin(): string {
+  const raw = env.appUrl?.trim();
+  if (!raw) return FALLBACK_SITE_ORIGIN;
+  try {
+    return new URL(raw).origin;
+  } catch {
+    return FALLBACK_SITE_ORIGIN;
+  }
+}
+
 export function reviewDetailPageUrl(slug: string): string {
-  return new URL(`/review/${encodeURIComponent(slug)}`, env.appUrl).href;
+  return new URL(
+    `/review/${encodeURIComponent(slug)}`,
+    siteOrigin(),
+  ).href;
 }
 
 export function buildReviewDetailMetadata(

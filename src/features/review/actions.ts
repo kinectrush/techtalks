@@ -76,6 +76,7 @@ export const getReviewsListCached = unstable_cache(
   { revalidate: 120, tags: ['reviews'] },
 );
 
+/** @deprecated Use `getPublishedReviewBySlug` from `queries/get-published-review-by-slug` in RSC pages. */
 export const getReviewBySlugCached = unstable_cache(
   async (slug: string) => resolveArticleBySlug(slug),
   ['review-detail-v2-db'],

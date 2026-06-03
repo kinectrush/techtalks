@@ -42,16 +42,15 @@ type ArticleRow = {
 
 type PostgrestErrorLike = { code?: string; message?: string } | null;
 
-function pickOne<T>(value: T | T[] | null | undefined): T {
-  if (value == null) {
-    throw new Error('Missing related row');
-  }
-  return Array.isArray(value) ? value[0] : value;
+function pickOne<T>(value: T | T[] | null | undefined): T | null {
+  if (value == null) return null;
+  return Array.isArray(value) ? (value[0] ?? null) : value;
 }
 
-function mapRow(row: ArticleRow): ReviewArticle {
+function mapRow(row: ArticleRow): ReviewArticle | null {
   const category = pickOne(row.categories);
   const author = pickOne(row.authors);
+  if (!category || !author) return null;
 
   return {
     id: row.id,
@@ -197,7 +196,9 @@ export async function fetchPublishedArticles(
   }
 
   if (error) throw error;
-  return ((data ?? []) as unknown as ArticleRow[]).map(mapRow);
+  return ((data ?? []) as unknown as ArticleRow[])
+    .map(mapRow)
+    .filter((row): row is ReviewArticle => row != null);
 }
 
 export async function fetchPublishedArticleBySlug(
