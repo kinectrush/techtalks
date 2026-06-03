@@ -45,6 +45,11 @@ export function buildOpenGraphImagesFromUrl(imageUrl: string, alt = 'TechTalks')
 
 const FALLBACK_SITE_ORIGIN = 'https://www.techtalks.io.vn';
 
+/** Canonical site origin for sitemap, robots, and absolute URLs. */
+export function getSiteOrigin(): string {
+  return siteOrigin();
+}
+
 function siteOrigin(): string {
   const raw = env.appUrl?.trim();
   if (!raw) return FALLBACK_SITE_ORIGIN;

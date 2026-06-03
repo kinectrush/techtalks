@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 
-import { env } from '@/lib/env';
+import { getSiteOrigin } from '@/lib/site-assets';
 
 /** Luồng user công khai — cho phép Google/Facebook crawl & preview. */
 const PUBLIC_ALLOW = ['/', '/reviews', '/review/'];
@@ -20,6 +20,7 @@ export default function robots(): MetadataRoute.Robots {
       { userAgent: 'Googlebot', ...publicSite },
       { userAgent: 'facebookexternalhit', ...publicSite },
     ],
-    host: env.appUrl,
+    host: getSiteOrigin(),
+    sitemap: `${getSiteOrigin()}/sitemap.xml`,
   };
 }
