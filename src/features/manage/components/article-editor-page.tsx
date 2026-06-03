@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type FieldErrors } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -58,6 +58,7 @@ export function ArticleEditorPage({
 
   const form = useForm<AdminArticleFormValues>({
     resolver: zodResolver(adminArticleSchema),
+    shouldUnregister: false,
     defaultValues: {
       title: '',
       slug: '',
@@ -119,6 +120,13 @@ export function ArticleEditorPage({
     }
   }, [article, categories, authors, reset]);
 
+  function onInvalid(errors: FieldErrors<AdminArticleFormValues>) {
+    const first = Object.values(errors)[0];
+    toast.error(
+      first?.message?.toString() ?? 'Vui lòng kiểm tra lại các trường bắt buộc',
+    );
+  }
+
   async function onSubmit(values: AdminArticleFormValues) {
     try {
       const input = formValuesToArticleInput(values);
@@ -173,7 +181,7 @@ export function ArticleEditorPage({
 
       <form
         id="article-editor-form"
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={handleSubmit(onSubmit, onInvalid)}
         className="relative rounded-xl border bg-card"
       >
         <ManagePendingOverlay show={isSaving} />

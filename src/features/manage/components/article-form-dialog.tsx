@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type FieldErrors } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -66,6 +66,7 @@ export function ArticleFormDialog({
 
   const form = useForm<AdminArticleFormValues>({
     resolver: zodResolver(adminArticleSchema),
+    shouldUnregister: false,
     defaultValues: {
       title: '',
       slug: '',
@@ -128,6 +129,13 @@ export function ArticleFormDialog({
     }
   }, [open, article, categories, authors, reset]);
 
+  function onInvalid(errors: FieldErrors<AdminArticleFormValues>) {
+    const first = Object.values(errors)[0];
+    toast.error(
+      first?.message?.toString() ?? 'Vui lòng kiểm tra lại các trường bắt buộc',
+    );
+  }
+
   async function onSubmit(values: AdminArticleFormValues) {
     try {
       const input = formValuesToArticleInput(values);
@@ -163,7 +171,7 @@ export function ArticleFormDialog({
           </DialogTitle>
         </DialogHeader>
         <form
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(onSubmit, onInvalid)}
           className="flex min-h-0 flex-1 flex-col"
         >
           <Tabs defaultValue="basic" className="flex min-h-0 flex-1 flex-col">
