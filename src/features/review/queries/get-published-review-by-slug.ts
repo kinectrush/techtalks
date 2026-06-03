@@ -16,7 +16,7 @@ export const getPublishedReviewBySlug = cache(
       return await resolveArticleBySlug(normalized);
     } catch (error) {
       console.error('[getPublishedReviewBySlug]', normalized, error);
-      throw error;
+      return null;
     }
   },
 );
