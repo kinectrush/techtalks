@@ -17,11 +17,16 @@ type ReviewDetailPageProps = {
 export async function generateMetadata({
   params,
 }: ReviewDetailPageProps): Promise<Metadata> {
-  const { locale, slug } = await params;
-  const article = await getPublishedReviewBySlug(slug);
-  if (!article) return {};
+  try {
+    const { locale, slug } = await params;
+    const article = await getPublishedReviewBySlug(slug);
+    if (!article) return {};
 
-  return buildReviewDetailMetadata(article, locale as Locale);
+    return buildReviewDetailMetadata(article, locale as Locale);
+  } catch (error) {
+    console.error('[review/generateMetadata]', error);
+    return {};
+  }
 }
 
 export default async function ReviewDetailPage({ params }: ReviewDetailPageProps) {

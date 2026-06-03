@@ -24,8 +24,13 @@ const ALLOWED_ATTR = ['href', 'target', 'rel', 'src', 'alt', 'title', 'class'];
 
 /** Sanitize Tiptap HTML before rendering on the public site. */
 export function sanitizeArticleHtml(html: string): string {
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS,
-    ALLOWED_ATTR,
-  });
+  try {
+    return DOMPurify.sanitize(html, {
+      ALLOWED_TAGS,
+      ALLOWED_ATTR,
+    });
+  } catch (error) {
+    console.error('[sanitizeArticleHtml]', error);
+    return '';
+  }
 }
