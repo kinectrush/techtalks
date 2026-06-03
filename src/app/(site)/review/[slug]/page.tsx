@@ -4,6 +4,9 @@ import { setRequestLocale } from 'next-intl/server';
 
 import { getReviewBySlugCached } from '@/features/review/actions';
 import { ReviewDetailView } from '@/features/review/components/review-detail-view';
+import { buildReviewDetailMetadata } from '@/lib/site-assets';
+
+export const dynamic = 'force-dynamic';
 
 const locale = 'vi' as const;
 
@@ -18,15 +21,7 @@ export async function generateMetadata({
   const article = await getReviewBySlugCached(slug);
   if (!article) return {};
 
-  return {
-    title: article.title,
-    description: article.excerpt,
-    openGraph: {
-      title: article.title,
-      description: article.excerpt,
-      images: article.coverImage ? [{ url: article.coverImage }] : undefined,
-    },
-  };
+  return buildReviewDetailMetadata(article, locale);
 }
 
 export default async function ReviewDetailPage({

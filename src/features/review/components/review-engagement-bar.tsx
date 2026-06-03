@@ -12,21 +12,28 @@ type ReviewEngagementBarProps = {
   engagement: ReviewEngagement;
   publishedAt: string;
   locale: string;
-  initialLiked: boolean;
   onLiked?: () => void;
 };
+
+function readLikedCookie(articleId: string): boolean {
+  if (typeof document === 'undefined') return false;
+  return document.cookie.split('; ').some((c) => c === `rv_liked_${articleId}=1`);
+}
 
 export function ReviewEngagementBar({
   articleId,
   engagement: initialEngagement,
   publishedAt,
   locale,
-  initialLiked,
   onLiked,
 }: ReviewEngagementBarProps) {
   const [engagement, setEngagement] = useState(initialEngagement);
-  const [liked, setLiked] = useState(initialLiked);
+  const [liked, setLiked] = useState(false);
   const viewKey = useMemo(() => `rv_view_once:${articleId}`, [articleId]);
+
+  useEffect(() => {
+    setLiked(readLikedCookie(articleId));
+  }, [articleId]);
 
   useEffect(() => {
     // count 1 view per tab-session

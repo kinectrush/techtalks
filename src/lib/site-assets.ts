@@ -1,3 +1,5 @@
+import type { Metadata } from 'next';
+
 import { env } from '@/lib/env';
 import type { Locale } from '@/i18n/routing';
 
@@ -14,6 +16,11 @@ export function absoluteAssetUrl(path: string): string {
   return new URL(path, env.appUrl).href;
 }
 
+export function absoluteMediaUrl(url: string): string {
+  if (/^https?:\/\//i.test(url)) return url;
+  return absoluteAssetUrl(url.startsWith('/') ? url : `/${url}`);
+}
+
 export function getHomeOpenGraphImage(locale: Locale): string {
   return locale === 'vi' ? SITE_ASSETS.ogHomeVi : SITE_ASSETS.ogHomeEn;
 }
@@ -26,9 +33,48 @@ export function getReviewsOpenGraphImage(categorySlug?: string): string {
   return SITE_ASSETS.ogReviews;
 }
 
-export function buildOpenGraphImages(path: string) {
+export function buildOpenGraphImages(path: string, alt = 'TechTalks') {
   const url = absoluteAssetUrl(path);
-  return [{ url, width: 1200, height: 630, alt: 'TechTalks' }];
+  return [{ url, width: 1200, height: 630, alt }];
+}
+
+export function buildOpenGraphImagesFromUrl(imageUrl: string, alt = 'TechTalks') {
+  const url = absoluteMediaUrl(imageUrl);
+  return [{ url, width: 1200, height: 630, alt }];
+}
+
+export function reviewDetailPageUrl(slug: string): string {
+  return new URL(`/review/${encodeURIComponent(slug)}`, env.appUrl).href;
+}
+
+export function buildReviewDetailMetadata(
+  article: { title: string; excerpt: string; coverImage: string; slug: string },
+  locale: Locale = 'vi',
+): Metadata {
+  const pageUrl = reviewDetailPageUrl(article.slug);
+  const ogImages = buildOpenGraphImagesFromUrl(article.coverImage, article.title);
+
+  return {
+    title: article.title,
+    description: article.excerpt,
+    alternates: { canonical: pageUrl },
+    openGraph: {
+      type: 'article',
+      url: pageUrl,
+      title: article.title,
+      description: article.excerpt,
+      siteName: 'TechTalks',
+      images: ogImages,
+      locale: locale === 'vi' ? 'vi_VN' : 'en_US',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: article.title,
+      description: article.excerpt,
+      images: ogImages.map((img) => img.url),
+    },
+    robots: { index: true, follow: true },
+  };
 }
 
 export function localePageUrl(locale: Locale, pathname = ''): string {

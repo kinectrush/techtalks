@@ -17,7 +17,7 @@ export async function SiteHeader() {
           <SiteLogo alt={t('siteName')} priority />
         </Link>
 
-        <nav className="hidden flex-1 items-center justify-center md:flex">
+        <nav className="hidden flex-1 items-center justify-center md:flex md:min-w-0">
           <div className="flex max-w-3xl items-center gap-1 overflow-x-auto whitespace-nowrap rounded-md px-1">
             <Link
               href="/"
@@ -37,12 +37,12 @@ export async function SiteHeader() {
           </div>
         </nav>
 
-        <div className="flex items-center justify-end gap-2">
-          <div className="md:hidden">
-            <MobileNavDialog homeLabel={t('navHome')} categories={menuCategories} />
-          </div>
+        <div className="ml-auto flex shrink-0 items-center justify-end gap-2">
           <div className="hidden h-6 w-px bg-border md:block" />
           <ContactMessageDialog className="hidden gap-2 md:inline-flex" />
+          <div className="md:hidden">
+            <MobileNavDialog />
+          </div>
         </div>
       </div>
     </header>

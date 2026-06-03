@@ -1,6 +1,5 @@
 import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
-import { cookies } from 'next/headers';
 
 import type { ReviewSummary } from '@/types/review';
 
@@ -22,9 +21,6 @@ export async function ReviewDetailView({
   const hasContent = Boolean(article.content?.trim());
   const affiliateUrl = article.affiliateLinks?.[0]?.url ?? '';
   const authorName = article.author.name === 'Editorial' ? 'Admin' : article.author.name;
-  const initialLiked = Boolean(
-    (await cookies()).get(`rv_liked_${article.id}`)?.value,
-  );
 
   return (
     <article className="mx-auto max-w-3xl px-4 py-8 lg:py-12">
@@ -56,7 +52,6 @@ export async function ReviewDetailView({
           engagement={article.engagement}
           publishedAt={article.publishedAt}
           locale={locale}
-          initialLiked={initialLiked}
         />
       </div>
 

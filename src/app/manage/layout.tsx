@@ -21,6 +21,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'TechTalks Admin',
+  robots: { index: false, follow: false, nocache: true },
   icons: {
     icon: SITE_ASSETS.favicon,
     shortcut: SITE_ASSETS.favicon,
