@@ -2,8 +2,8 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useForm, type FieldErrors } from 'react-hook-form';
+import { useEffect, useMemo, useState } from 'react';
+import { Controller, useForm, type FieldErrors } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -34,6 +34,7 @@ import {
   createArticleAction,
   updateArticleAction,
 } from '@/features/manage/articles/actions';
+import { withSelectedFormOption } from '@/features/manage/articles/form-options';
 import { slugify } from '@/lib/slug';
 import type { AdminArticleRow } from '@/types/admin';
 
@@ -78,8 +79,25 @@ export function ArticleEditorPage({
     },
   });
 
-  const { register, handleSubmit, watch, setValue, reset, formState } = form;
+  const { register, handleSubmit, watch, setValue, reset, control, formState } =
+    form;
   const title = watch('title');
+
+  const categoryOptions = useMemo(
+    () =>
+      withSelectedFormOption(
+        categories,
+        article?.categoryId,
+        article?.categoryName,
+      ),
+    [categories, article?.categoryId, article?.categoryName],
+  );
+
+  const authorOptions = useMemo(
+    () =>
+      withSelectedFormOption(authors, article?.authorId, article?.authorName),
+    [authors, article?.authorId, article?.authorName],
+  );
 
   useEffect(() => {
     if (!slugTouched && title && !isEdit) {
@@ -88,37 +106,39 @@ export function ArticleEditorPage({
   }, [title, slugTouched, setValue, isEdit]);
 
   useEffect(() => {
-    if (article) {
-      reset(articleToFormValues(article));
-      setSlugTouched(true);
-    } else {
-      reset({
-        title: '',
-        slug: '',
-        subtitle: '',
-        excerpt: '',
-        content: '',
-        coverImage: '',
-        editorPickCoverImageMobile: '',
-        editorPickCoverImageDesktop: '',
-        ogImage: '',
-        canonicalUrl: '',
-        affiliateUrl: '',
-        status: 'draft',
-        isActive: true,
-        rating: 4,
-        publishedAt: new Date().toISOString().slice(0, 16),
-        categoryId: categories[0]?.id ?? '',
-        authorId: authors[0]?.id ?? '',
-        tagsText: '',
-        metaTitle: '',
-        metaDescription: '',
-        metaKeywords: '',
-        isEditorPick: false,
-      });
-      setSlugTouched(false);
-    }
-  }, [article, categories, authors, reset]);
+    if (!article) return;
+    reset(articleToFormValues(article));
+    setSlugTouched(true);
+  }, [article?.id, reset]);
+
+  useEffect(() => {
+    if (article) return;
+    reset({
+      title: '',
+      slug: '',
+      subtitle: '',
+      excerpt: '',
+      content: '',
+      coverImage: '',
+      editorPickCoverImageMobile: '',
+      editorPickCoverImageDesktop: '',
+      ogImage: '',
+      canonicalUrl: '',
+      affiliateUrl: '',
+      status: 'draft',
+      isActive: true,
+      rating: 4,
+      publishedAt: new Date().toISOString().slice(0, 16),
+      categoryId: categories[0]?.id ?? '',
+      authorId: authors[0]?.id ?? '',
+      tagsText: '',
+      metaTitle: '',
+      metaDescription: '',
+      metaKeywords: '',
+      isEditorPick: false,
+    });
+    setSlugTouched(false);
+  }, [article, categories[0]?.id, authors[0]?.id, reset]);
 
   function onInvalid(errors: FieldErrors<AdminArticleFormValues>) {
     const first = Object.values(errors)[0];
@@ -222,39 +242,45 @@ export function ArticleEditorPage({
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Danh mục</Label>
-                  <Select
-                    value={watch('categoryId')}
-                    onValueChange={(v) => setValue('categoryId', v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Chọn danh mục" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    name="categoryId"
+                    control={control}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Chọn danh mục" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categoryOptions.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>
+                              {c.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Tác giả</Label>
-                  <Select
-                    value={watch('authorId')}
-                    onValueChange={(v) => setValue('authorId', v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Chọn tác giả" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {authors.map((a) => (
-                        <SelectItem key={a.id} value={a.id}>
-                          {a.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    name="authorId"
+                    control={control}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Chọn tác giả" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {authorOptions.map((a) => (
+                            <SelectItem key={a.id} value={a.id}>
+                              {a.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
               </div>
             </TabsContent>
