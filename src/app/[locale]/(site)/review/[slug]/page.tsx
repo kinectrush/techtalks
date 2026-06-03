@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
 
+import { getActiveAdBannersCached } from '@/features/ad-banners/actions';
 import { ReviewDetailView } from '@/features/review/components/review-detail-view';
 import { getPublishedReviewBySlug } from '@/features/review/queries/get-published-review-by-slug';
 import type { Locale } from '@/i18n/routing';
@@ -32,9 +33,18 @@ export async function generateMetadata({
 export default async function ReviewDetailPage({ params }: ReviewDetailPageProps) {
   const { locale, slug } = await params;
   setRequestLocale(locale as Locale);
-  const article = await getPublishedReviewBySlug(slug);
+  const [article, adBanners] = await Promise.all([
+    getPublishedReviewBySlug(slug),
+    getActiveAdBannersCached(),
+  ]);
 
   if (!article) notFound();
 
-  return <ReviewDetailView article={article} locale={locale} />;
+  return (
+    <ReviewDetailView
+      article={article}
+      locale={locale}
+      adBanners={adBanners}
+    />
+  );
 }

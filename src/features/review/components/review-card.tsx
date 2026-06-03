@@ -53,7 +53,7 @@ export function ReviewCard({
       <Link
         href={href}
         className={cn(
-          'relative shrink-0 overflow-hidden bg-muted/20',
+          'relative shrink-0 cursor-pointer overflow-hidden bg-muted/20',
           isHorizontal ? 'h-24 aspect-video' : 'aspect-video w-full',
         )}
       >
@@ -78,7 +78,7 @@ export function ReviewCard({
           ) : null}
         </div>
 
-        <Link href={href}>
+        <Link href={href} className="cursor-pointer">
           <h3
             className={cn(
               'font-semibold leading-snug text-foreground group-hover:text-brand',

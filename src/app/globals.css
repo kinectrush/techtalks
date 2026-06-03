@@ -86,6 +86,29 @@
   body {
     @apply bg-background text-foreground antialiased;
   }
+
+  a[href],
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  [role='link']:not([aria-disabled='true']),
+  [role='tab']:not([aria-disabled='true']),
+  [role='menuitem']:not([data-disabled]),
+  [role='menuitemcheckbox']:not([data-disabled]),
+  [role='menuitemradio']:not([data-disabled]),
+  [role='option']:not([data-disabled]),
+  [role='switch']:not(:disabled),
+  [role='checkbox']:not(:disabled),
+  [role='combobox']:not(:disabled),
+  label[for],
+  summary {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [aria-disabled='true'],
+  [data-disabled] {
+    cursor: not-allowed;
+  }
 }
 
 /* Tiptap editor */
@@ -114,6 +137,10 @@
   font-size: 1.125rem;
   font-weight: 600;
   margin: 1rem 0 0.5rem;
+}
+
+.tiptap a {
+  cursor: pointer;
 }
 
 .tiptap blockquote {
@@ -200,6 +227,7 @@
   color: var(--brand);
   text-decoration: underline;
   text-underline-offset: 2px;
+  cursor: pointer;
 }
 
 .article-prose a:hover {

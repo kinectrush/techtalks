@@ -5,6 +5,8 @@ import { revalidatePath } from 'next/cache';
 import { requireAdminUserAction } from '@/features/manage/auth/actions';
 import {
   createAdminArticle,
+  deleteAdminArticle,
+  duplicateAdminArticle,
   getAdminArticleById,
   listAdminArticles,
   listAuthors,
@@ -58,6 +60,21 @@ export async function updateArticleAction(id: string, input: AdminArticleInput) 
 export async function toggleArticleActiveAction(id: string, isActive: boolean) {
   const supabase = await guard();
   await setAdminArticleActive(supabase, id, isActive);
+  revalidatePath('/manage/admin/articles');
+  revalidatePath('/', 'layout');
+}
+
+export async function duplicateArticleAction(id: string) {
+  const supabase = await guard();
+  const article = await duplicateAdminArticle(supabase, id);
+  revalidatePath('/manage/admin/articles');
+  revalidatePath('/', 'layout');
+  return article;
+}
+
+export async function deleteArticleAction(id: string) {
+  const supabase = await guard();
+  await deleteAdminArticle(supabase, id);
   revalidatePath('/manage/admin/articles');
   revalidatePath('/', 'layout');
 }

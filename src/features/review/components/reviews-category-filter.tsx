@@ -23,7 +23,7 @@ export async function ReviewsCategoryFilter({
       <Link
         href="/reviews"
         className={cn(
-          'rounded-full px-4 py-2 text-sm font-medium transition-colors',
+          'cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition-colors',
           !activeSlug
             ? 'bg-brand text-white'
             : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground',
@@ -38,7 +38,7 @@ export async function ReviewsCategoryFilter({
             key={cat.slug}
             href={`/reviews?category=${cat.slug}`}
             className={cn(
-              'rounded-full px-4 py-2 text-sm font-medium transition-colors',
+              'cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition-colors',
               active
                 ? 'bg-brand text-white'
                 : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground',

@@ -8,6 +8,8 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import { ManageLoadingButton } from '@/features/manage/components/manage-loading-button';
+import { ManagePendingOverlay } from '@/features/manage/components/manage-pending-overlay';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -134,6 +136,8 @@ export function ArticleEditorPage({
     }
   }
 
+  const isSaving = formState.isSubmitting;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -142,6 +146,7 @@ export function ArticleEditorPage({
             type="button"
             variant="ghost"
             className="-ml-2"
+            disabled={isSaving}
             onClick={() => router.push(backHref)}
           >
             <ArrowLeft className="h-4 w-4" />
@@ -156,16 +161,22 @@ export function ArticleEditorPage({
             </p>
           </div>
         </div>
-        <Button type="submit" form="article-editor-form" disabled={formState.isSubmitting}>
-          {formState.isSubmitting ? 'Đang lưu...' : 'Lưu'}
-        </Button>
+        <ManageLoadingButton
+          type="submit"
+          form="article-editor-form"
+          isLoading={isSaving}
+          loadingLabel="Đang lưu..."
+        >
+          Lưu
+        </ManageLoadingButton>
       </div>
 
       <form
         id="article-editor-form"
         onSubmit={handleSubmit(onSubmit)}
-        className="rounded-xl border bg-card"
+        className="relative rounded-xl border bg-card"
       >
+        <ManagePendingOverlay show={isSaving} />
         <Tabs defaultValue="basic" className="flex min-h-0 flex-1 flex-col">
           <TabsList className="w-full justify-start rounded-none border-b bg-muted/20 px-4">
             <TabsTrigger value="basic">Cơ bản</TabsTrigger>
@@ -351,6 +362,7 @@ export function ArticleEditorPage({
                 </div>
                 <Switch
                   checked={watch('isActive')}
+                  disabled={isSaving}
                   onCheckedChange={(v) => setValue('isActive', v)}
                 />
               </div>
@@ -363,6 +375,7 @@ export function ArticleEditorPage({
                 </div>
                 <Switch
                   checked={watch('isEditorPick') ?? false}
+                  disabled={isSaving}
                   onCheckedChange={(v) => setValue('isEditorPick', v)}
                 />
               </div>

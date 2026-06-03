@@ -45,6 +45,7 @@
     "reviewsInCategory": "{name}",
     "unknownCategory": "Category not found.",
     "noReviews": "No articles in this category yet.",
+    "homeEmpty": "No published articles yet. Publish and activate articles in the admin panel.",
     "categoryMeta": {
       "congNghe": {
         "title": "Tech: News, Discussions & Insights — TechTalks",

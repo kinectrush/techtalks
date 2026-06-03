@@ -1,14 +1,16 @@
 'use client';
 
-import { FileText, FolderTree, LogOut, Mail, Users } from 'lucide-react';
+import { FileText, FolderTree, Image, Loader2, LogOut, Mail, Users } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
   ADMIN_ARTICLES_PATH,
+  ADMIN_BANNERS_PATH,
   ADMIN_CATEGORIES_PATH,
   ADMIN_LOGIN_PATH,
   ADMIN_MESSAGES_PATH,
@@ -18,6 +20,7 @@ import type { AdminUser } from '@/types/admin';
 
 const nav = [
   { href: ADMIN_ARTICLES_PATH, label: 'Bài viết', icon: FileText },
+  { href: ADMIN_BANNERS_PATH, label: 'Banner', icon: Image },
   { href: ADMIN_CATEGORIES_PATH, label: 'Danh mục', icon: FolderTree },
   { href: ADMIN_USERS_PATH, label: 'Người dùng', icon: Users },
   { href: ADMIN_MESSAGES_PATH, label: 'Messages', icon: Mail },
@@ -30,8 +33,11 @@ type AdminSidebarProps = {
 export function AdminSidebar({ user }: AdminSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   async function handleLogout() {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
     try {
       await fetch('/api/manage/auth/logout', { method: 'POST' });
       toast.success('Đã đăng xuất');
@@ -39,6 +45,8 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
       router.refresh();
     } catch {
       toast.error('Không thể đăng xuất');
+    } finally {
+      setIsLoggingOut(false);
     }
   }
 
@@ -61,7 +69,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                'flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                 active
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -78,9 +86,15 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
           variant="ghost"
           className="w-full justify-start gap-2"
           onClick={handleLogout}
+          disabled={isLoggingOut}
+          aria-busy={isLoggingOut}
         >
-          <LogOut className="h-4 w-4" />
-          Đăng xuất
+          {isLoggingOut ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <LogOut className="h-4 w-4" />
+          )}
+          {isLoggingOut ? 'Đang đăng xuất...' : 'Đăng xuất'}
         </Button>
       </div>
     </aside>

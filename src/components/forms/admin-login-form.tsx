@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
-import { Button } from '@/components/ui/button';
+import { ManageLoadingButton } from '@/features/manage/components/manage-loading-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ADMIN_ARTICLES_PATH } from '@/lib/manage/constants';
@@ -80,9 +80,14 @@ export function AdminLoginForm() {
           <p className="text-sm text-destructive">{errors.password.message}</p>
         ) : null}
       </div>
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? '...' : 'Đăng nhập'}
-      </Button>
+      <ManageLoadingButton
+        type="submit"
+        className="w-full"
+        isLoading={isSubmitting}
+        loadingLabel="Đang đăng nhập..."
+      >
+        Đăng nhập
+      </ManageLoadingButton>
     </form>
   );
 }

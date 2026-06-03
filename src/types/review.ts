@@ -90,7 +90,7 @@ export type ReviewSummary = ReviewArticle & {
 export type TrendingWindow = '24h' | '7d';
 
 export type HomePageData = {
-  hero: ReviewSummary;
+  hero: ReviewSummary | null;
   trending24h: ReviewSummary[];
   trending7d: ReviewSummary[];
   latest: ReviewSummary[];

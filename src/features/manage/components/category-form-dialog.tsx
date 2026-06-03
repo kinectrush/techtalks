@@ -6,6 +6,8 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import { ManageLoadingButton } from '@/features/manage/components/manage-loading-button';
+import { ManagePendingOverlay } from '@/features/manage/components/manage-pending-overlay';
 import {
   Dialog,
   DialogContent,
@@ -31,7 +33,8 @@ type CategoryFormDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   category: AdminCategory | null;
-  onSaved: () => void;
+  onSaved: () => void | Promise<void>;
+  onSavingChange?: (saving: boolean) => void;
 };
 
 export function CategoryFormDialog({
@@ -39,6 +42,7 @@ export function CategoryFormDialog({
   onOpenChange,
   category,
   onSaved,
+  onSavingChange,
 }: CategoryFormDialogProps) {
   const isEdit = Boolean(category);
   const [slugTouched, setSlugTouched] = useState(false);
@@ -92,6 +96,10 @@ export function CategoryFormDialog({
     }
   }, [open, category, reset]);
 
+  useEffect(() => {
+    onSavingChange?.(isSubmitting);
+  }, [isSubmitting, onSavingChange]);
+
   async function onSubmit(values: AdminCategoryFormValues) {
     try {
       if (isEdit && category) {
@@ -102,15 +110,22 @@ export function CategoryFormDialog({
         toast.success('Đã tạo danh mục');
       }
       onOpenChange(false);
-      onSaved();
+      await onSaved();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Lưu thất bại');
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (isSubmitting) return;
+        onOpenChange(next);
+      }}
+    >
+      <DialogContent className="relative max-w-md">
+        <ManagePendingOverlay show={isSubmitting} />
         <DialogHeader>
           <DialogTitle>
             {isEdit ? 'Chỉnh sửa danh mục' : 'Tạo danh mục'}
@@ -141,6 +156,7 @@ export function CategoryFormDialog({
             <Label>Hiển thị trên menu web</Label>
             <Switch
               checked={watch('showInMenu')}
+              disabled={isSubmitting}
               onCheckedChange={(v) => setValue('showInMenu', v)}
             />
           </div>
@@ -148,6 +164,7 @@ export function CategoryFormDialog({
             <Label>Đang hoạt động</Label>
             <Switch
               checked={watch('isActive')}
+              disabled={isSubmitting}
               onCheckedChange={(v) => setValue('isActive', v)}
             />
           </div>
@@ -155,13 +172,18 @@ export function CategoryFormDialog({
             <Button
               type="button"
               variant="outline"
+              disabled={isSubmitting}
               onClick={() => onOpenChange(false)}
             >
               Hủy
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Đang lưu...' : 'Lưu'}
-            </Button>
+            <ManageLoadingButton
+              type="submit"
+              isLoading={isSubmitting}
+              loadingLabel="Đang lưu..."
+            >
+              Lưu
+            </ManageLoadingButton>
           </DialogFooter>
         </form>
       </DialogContent>

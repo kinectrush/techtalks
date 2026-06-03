@@ -68,7 +68,7 @@ export function MobileNavDialog() {
               type="button"
               aria-label="Đóng menu"
               className={cn(
-                'absolute inset-0 bg-black/50 transition-opacity will-change-[opacity]',
+                'absolute inset-0 cursor-pointer bg-black/50 transition-opacity will-change-[opacity]',
                 visible ? 'opacity-100' : 'opacity-0',
               )}
               style={{
@@ -107,7 +107,7 @@ export function MobileNavDialog() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="block rounded-md px-3 py-3 text-base font-medium hover:bg-muted"
+                    className="block cursor-pointer rounded-md px-3 py-3 text-base font-medium hover:bg-muted"
                     onClick={close}
                   >
                     {item.label}

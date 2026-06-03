@@ -23,6 +23,7 @@ Chạy **theo thứ tự** trong [SQL Editor](https://supabase.com/dashboard/pro
 2. `supabase/migrations/20250601100000_admin_and_article_meta.sql`
 3. `supabase/migrations/20250601200000_storage_and_categories.sql`
 4. `supabase/migrations/20250602000000_remove_general_category.sql`
+5. `supabase/migrations/20250603000000_ad_banners.sql`
 
 Hoặc CLI:
 
@@ -39,6 +40,7 @@ supabase db push
 | `authors` | Tác giả bài viết |
 | `review_articles` | Bài viết + SEO/meta + `is_active` |
 | `admin_users` | User đăng nhập `/manage/admin` (mật khẩu bcrypt) |
+| `ad_banners` | Banner quảng cáo theo vị trí (active/inactive) |
 
 Migration `20250601100000` tạo user `kinectrush` (mật khẩu đã hash, không lưu plain text trong DB).
 
@@ -50,6 +52,7 @@ Migration `20250601100000` tạo user `kinectrush` (mật khẩu đã hash, khô
 | `/manage/admin/articles` | CRUD bài viết (editor rich text + upload ảnh) |
 | `/manage/admin/categories` | CRUD danh mục (menu site) |
 | `/manage/admin/users` | CRUD user admin |
+| `/manage/admin/banners` | CRUD banner quảng cáo (upload + link) |
 
 Storage bucket `article-images` (public read) — ảnh bìa, OG, ảnh trong nội dung.
 

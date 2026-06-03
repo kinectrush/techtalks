@@ -13,7 +13,7 @@ export async function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4 lg:h-16 lg:px-6">
-        <Link href="/" className="flex shrink-0 items-center">
+        <Link href="/" className="flex shrink-0 cursor-pointer items-center">
           <SiteLogo alt={t('siteName')} priority />
         </Link>
 
@@ -21,7 +21,7 @@ export async function SiteHeader() {
           <div className="flex max-w-3xl items-center gap-1 overflow-x-auto whitespace-nowrap rounded-md px-1">
             <Link
               href="/"
-              className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="cursor-pointer rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               {t('navHome')}
             </Link>
@@ -29,7 +29,7 @@ export async function SiteHeader() {
               <Link
                 key={cat.slug}
                 href={`/reviews?category=${cat.slug}`}
-                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="cursor-pointer rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               >
                 {cat.name}
               </Link>

@@ -1,6 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { slugify } from '@/lib/slug';
 import type { AdminArticleInput, AdminArticleRow } from '@/types/admin';
+
+const DUPLICATE_TITLE_PREFIX = '(copy) ';
 
 type DbArticle = {
   id: string;
@@ -179,13 +182,30 @@ export async function getAdminArticleById(
   return mapArticle(data as unknown as DbArticle);
 }
 
+async function hasEditorPickArticle(
+  supabase: SupabaseClient,
+): Promise<boolean> {
+  const { count, error } = await supabase
+    .from('review_articles')
+    .select('id', { count: 'exact', head: true })
+    .eq('is_editor_pick', true);
+
+  if (error) throw error;
+  return (count ?? 0) > 0;
+}
+
 export async function createAdminArticle(
   supabase: SupabaseClient,
   input: AdminArticleInput,
 ) {
+  const editorPickExists = await hasEditorPickArticle(supabase);
+  const payload = editorPickExists
+    ? input
+    : { ...input, isEditorPick: true };
+
   const { data, error } = await supabase
     .from('review_articles')
-    .insert(toDbPayload(input))
+    .insert(toDbPayload(payload))
     .select(SELECT)
     .single();
 
@@ -207,6 +227,90 @@ export async function updateAdminArticle(
 
   if (error) throw error;
   return mapArticle(data as unknown as DbArticle);
+}
+
+async function isSlugTaken(
+  supabase: SupabaseClient,
+  slug: string,
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('review_articles')
+    .select('id')
+    .eq('slug', slug)
+    .maybeSingle();
+
+  if (error) throw error;
+  return Boolean(data);
+}
+
+async function uniqueSlugForDuplicate(
+  supabase: SupabaseClient,
+  source: AdminArticleRow,
+  duplicateTitle: string,
+): Promise<string> {
+  const base =
+    slugify(duplicateTitle) || `${source.slug}-copy`.slice(0, 120);
+  if (!(await isSlugTaken(supabase, base))) return base;
+
+  for (let n = 2; n < 1000; n++) {
+    const suffix = `-${n}`;
+    const candidate = `${base.slice(0, 120 - suffix.length)}${suffix}`;
+    if (!(await isSlugTaken(supabase, candidate))) return candidate;
+  }
+
+  throw new Error('Could not generate a unique slug for duplicate');
+}
+
+export async function duplicateAdminArticle(
+  supabase: SupabaseClient,
+  id: string,
+) {
+  const source = await getAdminArticleById(supabase, id);
+  if (!source) throw new Error('Article not found');
+
+  const title = `${DUPLICATE_TITLE_PREFIX}${source.title}`;
+  const slug = await uniqueSlugForDuplicate(supabase, source, title);
+
+  const input: AdminArticleInput = {
+    title,
+    slug,
+    subtitle: source.subtitle ?? undefined,
+    excerpt: source.excerpt,
+    content: source.content ?? undefined,
+    coverImage: source.coverImage,
+    editorPickCoverImageMobile: source.editorPickCoverImageMobile ?? undefined,
+    editorPickCoverImageDesktop: source.editorPickCoverImageDesktop ?? undefined,
+    ogImage: source.ogImage ?? undefined,
+    canonicalUrl: source.canonicalUrl ?? undefined,
+    affiliateUrl: source.affiliateUrl ?? undefined,
+    categoryId: source.categoryId,
+    authorId: source.authorId,
+    publishedAt: source.publishedAt,
+    status: source.status,
+    isActive: false,
+    rating: source.rating,
+    pros: [],
+    cons: [],
+    tags: source.tags,
+    metaTitle: source.metaTitle ?? undefined,
+    metaDescription: source.metaDescription ?? undefined,
+    metaKeywords: source.metaKeywords ?? undefined,
+    isEditorPick: false,
+  };
+
+  return createAdminArticle(supabase, input);
+}
+
+export async function deleteAdminArticle(
+  supabase: SupabaseClient,
+  id: string,
+) {
+  const { error } = await supabase
+    .from('review_articles')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
 }
 
 export async function setAdminArticleActive(

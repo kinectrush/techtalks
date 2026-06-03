@@ -25,7 +25,7 @@ export async function HeroBanner({ article, locale }: HeroBannerProps) {
     article.coverImage;
 
   return (
-    <section className="group relative overflow-hidden rounded-xl border bg-card shadow-sm">
+    <section className="group relative cursor-pointer overflow-hidden rounded-xl border bg-card shadow-sm">
       <Link
         href={href}
         aria-label={article.title}

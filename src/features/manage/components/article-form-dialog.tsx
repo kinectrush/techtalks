@@ -6,6 +6,8 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import { ManageLoadingButton } from '@/features/manage/components/manage-loading-button';
+import { ManagePendingOverlay } from '@/features/manage/components/manage-pending-overlay';
 import {
   Dialog,
   DialogContent,
@@ -143,9 +145,18 @@ export function ArticleFormDialog({
     }
   }
 
+  const isSaving = formState.isSubmitting;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90vh] max-w-3xl flex-col gap-0 p-0">
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (isSaving) return;
+        onOpenChange(next);
+      }}
+    >
+      <DialogContent className="relative flex max-h-[90vh] max-w-3xl flex-col gap-0 p-0">
+        <ManagePendingOverlay show={isSaving} />
         <DialogHeader className="border-b px-6 py-4">
           <DialogTitle>
             {isEdit ? 'Chỉnh sửa bài viết' : 'Tạo bài viết mới'}
@@ -384,13 +395,18 @@ export function ArticleFormDialog({
             <Button
               type="button"
               variant="outline"
+              disabled={isSaving}
               onClick={() => onOpenChange(false)}
             >
               Hủy
             </Button>
-            <Button type="submit" disabled={formState.isSubmitting}>
-              {formState.isSubmitting ? 'Đang lưu...' : 'Lưu bài viết'}
-            </Button>
+            <ManageLoadingButton
+              type="submit"
+              isLoading={isSaving}
+              loadingLabel="Đang lưu..."
+            >
+              Lưu bài viết
+            </ManageLoadingButton>
           </DialogFooter>
         </form>
       </DialogContent>

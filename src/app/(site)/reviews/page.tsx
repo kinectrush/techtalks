@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
+import { getActiveAdBannersCached } from '@/features/ad-banners/actions';
+import { AdBannerSlot } from '@/features/ad-banners/components/ad-banner-slot';
 import { ReviewCard } from '@/features/review/components/review-card';
 import { ReviewsCategoryFilter } from '@/features/review/components/reviews-category-filter';
 import {
@@ -118,11 +120,14 @@ export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
   setRequestLocale(locale);
   const { category: categorySlug } = await searchParams;
 
-  const [articles, categories, t] = await Promise.all([
+  const [articles, categories, t, adBanners] = await Promise.all([
     getReviewsListCached(categorySlug),
     getPublicCategoriesAction(),
     getTranslations('Review'),
+    getActiveAdBannersCached(),
   ]);
+
+  const reviewsBanner = adBanners.reviews;
 
   const publicCategories = filterPublicCategories(categories);
   const activeCategory = categorySlug
@@ -133,6 +138,16 @@ export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
+      {reviewsBanner ? (
+        <div className="mb-6">
+          <AdBannerSlot
+            imageUrl={reviewsBanner.imageUrl}
+            linkUrl={reviewsBanner.linkUrl}
+            aspectRatio="16/9"
+            priority
+          />
+        </div>
+      ) : null}
       <h1 className="mb-2 text-3xl font-bold">{pageTitle}</h1>
       {categorySlug && !activeCategory ? (
         <p className="mb-6 text-sm text-muted-foreground">{t('unknownCategory')}</p>

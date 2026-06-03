@@ -29,10 +29,10 @@ export async function SiteFooter() {
               {t('navHome')}
             </p>
             <div className="flex flex-col gap-2 text-sm text-muted-foreground md:items-center">
-              <Link href="/" className="hover:text-foreground">
+              <Link href="/" className="cursor-pointer hover:text-foreground">
                 {t('navHome')}
               </Link>
-              <Link href="/reviews" className="hover:text-foreground">
+              <Link href="/reviews" className="cursor-pointer hover:text-foreground">
                 {t('navReviews')}
               </Link>
             </div>
@@ -45,7 +45,7 @@ export async function SiteFooter() {
                 href="https://www.facebook.com/congminh.tran.142/"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-md px-2 py-1 text-sm text-muted-foreground hover:text-foreground"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-sm text-muted-foreground hover:text-foreground"
               >
                 <FacebookIcon className="h-4 w-4" />
                 Facebook

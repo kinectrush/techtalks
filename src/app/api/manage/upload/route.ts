@@ -6,7 +6,13 @@ import {
   type UploadFolder,
 } from '@/features/manage/upload/storage';
 
-const FOLDERS: UploadFolder[] = ['covers', 'og', 'content', 'editor-picks'];
+const FOLDERS: UploadFolder[] = [
+  'covers',
+  'og',
+  'content',
+  'editor-picks',
+  'banners',
+];
 
 export async function POST(request: Request) {
   const session = await getAdminSession();

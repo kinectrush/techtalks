@@ -274,20 +274,15 @@ export async function getHomePageDataFromSupabase(
       .slice(0, 10)
       .map((a) => a.id),
   );
-  const summaries = summariesBase.map((a) => {
-    const listBadge: ReviewArticle extends never
-      ? never
-      : HomePageData['hero']['listBadge'] =
-      newestIds.has(a.id) ? 'new' : hotIds.has(a.id) ? 'hot' : null;
-
-    return { ...a, listBadge };
-  });
+  const summaries = summariesBase.map((a) => ({
+    ...a,
+    listBadge: (newestIds.has(a.id) ? 'new' : hotIds.has(a.id) ? 'hot' : null) as
+      | 'new'
+      | 'hot'
+      | null,
+  }));
   const hero =
     summaries.find((a) => a.isEditorPick) ?? summaries[0] ?? null;
-
-  if (!hero) {
-    throw new Error('No published reviews in Supabase');
-  }
 
   const trending24h = [...summaries]
     .sort((a, b) => b.trendingScore24h - a.trendingScore24h)

@@ -35,7 +35,7 @@ export async function TrendingSidebar({
           <li key={article.id}>
             <Link
               href={`/review/${article.slug}`}
-              className="group flex gap-3 rounded-md p-2 transition-colors hover:bg-muted/60"
+              className="group flex cursor-pointer gap-3 rounded-md p-2 transition-colors hover:bg-muted/60"
             >
               <span
                 className={cn(

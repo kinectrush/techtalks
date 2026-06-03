@@ -45,6 +45,7 @@
     "reviewsInCategory": "{name}",
     "unknownCategory": "Không tìm thấy danh mục này.",
     "noReviews": "Chưa có bài viết trong mục này.",
+    "homeEmpty": "Chưa có bài viết công khai. Hãy bật và xuất bản bài viết trong trang quản trị.",
     "categoryMeta": {
       "congNghe": {
         "title": "Công nghệ: Tin tức, Đánh giá & Thảo luận — TechTalks",
