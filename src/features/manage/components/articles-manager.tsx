@@ -259,7 +259,8 @@ export function ArticlesManager({
             if (!open) setArticleToDelete(null);
           }}
         >
-          <AlertDialogContent className="relative">
+          <AlertDialogContent>
+            <div className="relative">
             <ManagePendingOverlay show={isDeleting} />
             <AlertDialogHeader>
               <AlertDialogTitle>Xóa bài viết?</AlertDialogTitle>
@@ -281,6 +282,7 @@ export function ArticlesManager({
                 {isDeleting ? 'Đang xóa...' : 'Xóa'}
               </AlertDialogAction>
             </AlertDialogFooter>
+            </div>
           </AlertDialogContent>
         </AlertDialog>
       </div>

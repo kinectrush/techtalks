@@ -234,7 +234,8 @@ export function BannersManager({ initialBanners }: BannersManagerProps) {
             if (!open) setBannerToDelete(null);
           }}
         >
-          <AlertDialogContent className="relative">
+          <AlertDialogContent>
+            <div className="relative">
             <ManagePendingOverlay show={isDeleting} />
             <AlertDialogHeader>
               <AlertDialogTitle>Xóa banner?</AlertDialogTitle>
@@ -256,6 +257,7 @@ export function BannersManager({ initialBanners }: BannersManagerProps) {
                 {isDeleting ? 'Đang xóa...' : 'Xóa'}
               </AlertDialogAction>
             </AlertDialogFooter>
+            </div>
           </AlertDialogContent>
         </AlertDialog>
       </div>

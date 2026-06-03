@@ -77,8 +77,9 @@ export function ArticleFormDialog({
         onOpenChange(next);
       }}
     >
-      <DialogContent className="relative flex max-h-[90vh] max-w-3xl flex-col gap-0 p-0">
+      <DialogContent className="flex max-h-[90vh] max-w-3xl flex-col gap-0 p-0">
         {open ? (
+          <div className="relative flex min-h-0 flex-1 flex-col">
           <ArticleFormDialogBody
             key={article?.id ?? 'new'}
             article={article}
@@ -87,6 +88,7 @@ export function ArticleFormDialog({
             onOpenChange={onOpenChange}
             onSaved={onSaved}
           />
+          </div>
         ) : null}
       </DialogContent>
     </Dialog>

@@ -126,13 +126,14 @@ export function BannerFormDialog({
         onOpenChange(next);
       }}
     >
-      <DialogContent className="relative max-h-[90vh] overflow-y-auto sm:max-w-lg">
-        <ManagePendingOverlay show={isSubmitting} />
-        <DialogHeader>
-          <DialogTitle>{isEdit ? 'Chỉnh sửa banner' : 'Tạo banner'}</DialogTitle>
-        </DialogHeader>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+        <div className="relative">
+          <ManagePendingOverlay show={isSubmitting} />
+          <DialogHeader>
+            <DialogTitle>{isEdit ? 'Chỉnh sửa banner' : 'Tạo banner'}</DialogTitle>
+          </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label>Vị trí hiển thị *</Label>
             <Select
@@ -225,7 +226,8 @@ export function BannerFormDialog({
               Lưu
             </ManageLoadingButton>
           </DialogFooter>
-        </form>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

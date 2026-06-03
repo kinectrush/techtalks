@@ -124,7 +124,8 @@ export function CategoryFormDialog({
         onOpenChange(next);
       }}
     >
-      <DialogContent className="relative max-w-md">
+      <DialogContent className="max-w-md">
+        <div className="relative">
         <ManagePendingOverlay show={isSubmitting} />
         <DialogHeader>
           <DialogTitle>
@@ -186,6 +187,7 @@ export function CategoryFormDialog({
             </ManageLoadingButton>
           </DialogFooter>
         </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
