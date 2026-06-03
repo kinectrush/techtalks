@@ -2,7 +2,11 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useMemo, useState } from 'react';
-import { Controller, useForm, type FieldErrors } from 'react-hook-form';
+import {
+  FormProvider,
+  useForm,
+  type FieldErrors,
+} from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -29,30 +33,34 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { RichTextEditor } from '@/components/editor/rich-text-editor';
 import { ImageUploadField } from '@/components/forms/image-upload-field';
+import { ArticleCategoryAuthorFields } from '@/features/manage/components/article-category-author-fields';
 import {
   createArticleAction,
   updateArticleAction,
 } from '@/features/manage/articles/actions';
 import {
+  buildArticleFormDefaults,
+  type ArticleFormOption,
+} from '@/features/manage/articles/form-options';
+import {
   adminArticleSchema,
-  articleToFormValues,
   formValuesToArticleInput,
   type AdminArticleFormValues,
 } from '@/features/manage/articles/schema';
-import { withSelectedFormOption } from '@/features/manage/articles/form-options';
 import { slugify } from '@/lib/slug';
+import { cn } from '@/lib/utils';
 import type { AdminArticleRow } from '@/types/admin';
-
-type Option = { id: string; name: string; slug?: string };
 
 type ArticleFormDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   article: AdminArticleRow | null;
-  categories: Option[];
-  authors: Option[];
+  categories: ArticleFormOption[];
+  authors: ArticleFormOption[];
   onSaved: () => void;
 };
+
+const tabPanelClass = 'mt-0 data-[state=inactive]:hidden';
 
 export function ArticleFormDialog({
   open,
@@ -62,91 +70,66 @@ export function ArticleFormDialog({
   authors,
   onSaved,
 }: ArticleFormDialogProps) {
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        onOpenChange(next);
+      }}
+    >
+      <DialogContent className="relative flex max-h-[90vh] max-w-3xl flex-col gap-0 p-0">
+        {open ? (
+          <ArticleFormDialogBody
+            key={article?.id ?? 'new'}
+            article={article}
+            categories={categories}
+            authors={authors}
+            onOpenChange={onOpenChange}
+            onSaved={onSaved}
+          />
+        ) : null}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+type ArticleFormDialogBodyProps = {
+  article: AdminArticleRow | null;
+  categories: ArticleFormOption[];
+  authors: ArticleFormOption[];
+  onOpenChange: (open: boolean) => void;
+  onSaved: () => void;
+};
+
+function ArticleFormDialogBody({
+  article,
+  categories,
+  authors,
+  onOpenChange,
+  onSaved,
+}: ArticleFormDialogBodyProps) {
   const [slugTouched, setSlugTouched] = useState(false);
   const isEdit = Boolean(article);
+
+  const defaultValues = useMemo(
+    () => buildArticleFormDefaults(article, categories, authors),
+    [article, categories, authors],
+  );
 
   const form = useForm<AdminArticleFormValues>({
     resolver: zodResolver(adminArticleSchema),
     shouldUnregister: false,
-    defaultValues: {
-      title: '',
-      slug: '',
-      excerpt: '',
-      content: '',
-      coverImage: '',
-      editorPickCoverImageMobile: '',
-      editorPickCoverImageDesktop: '',
-      status: 'draft',
-      isActive: true,
-      rating: 4,
-      publishedAt: new Date().toISOString().slice(0, 16),
-      categoryId: categories[0]?.id ?? '',
-      authorId: authors[0]?.id ?? '',
-      isEditorPick: false,
-      affiliateUrl: '',
-    },
+    defaultValues,
   });
 
-  const { register, handleSubmit, watch, setValue, reset, control, formState } =
-    form;
+  const { register, handleSubmit, watch, setValue, formState } = form;
   const title = watch('title');
-
-  const categoryOptions = useMemo(
-    () =>
-      withSelectedFormOption(
-        categories,
-        article?.categoryId,
-        article?.categoryName,
-      ),
-    [categories, article?.categoryId, article?.categoryName],
-  );
-
-  const authorOptions = useMemo(
-    () =>
-      withSelectedFormOption(authors, article?.authorId, article?.authorName),
-    [authors, article?.authorId, article?.authorName],
-  );
 
   useEffect(() => {
     if (!slugTouched && title && !isEdit) {
       setValue('slug', slugify(title));
     }
   }, [title, slugTouched, setValue, isEdit]);
-
-  useEffect(() => {
-    if (!open || !article) return;
-    reset(articleToFormValues(article));
-    setSlugTouched(true);
-  }, [open, article?.id, reset]);
-
-  useEffect(() => {
-    if (!open || article) return;
-    reset({
-      title: '',
-      slug: '',
-      subtitle: '',
-      excerpt: '',
-      content: '',
-      coverImage: '',
-      editorPickCoverImageMobile: '',
-      editorPickCoverImageDesktop: '',
-      ogImage: '',
-      canonicalUrl: '',
-      affiliateUrl: '',
-      status: 'draft',
-      isActive: true,
-      rating: 4,
-      publishedAt: new Date().toISOString().slice(0, 16),
-      categoryId: categories[0]?.id ?? '',
-      authorId: authors[0]?.id ?? '',
-      tagsText: '',
-      metaTitle: '',
-      metaDescription: '',
-      metaKeywords: '',
-      isEditorPick: false,
-    });
-    setSlugTouched(false);
-  }, [open, article, categories[0]?.id, authors[0]?.id, reset]);
 
   function onInvalid(errors: FieldErrors<AdminArticleFormValues>) {
     const first = Object.values(errors)[0];
@@ -175,24 +158,27 @@ export function ArticleFormDialog({
   const isSaving = formState.isSubmitting;
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        if (isSaving) return;
-        onOpenChange(next);
-      }}
-    >
-      <DialogContent className="relative flex max-h-[90vh] max-w-3xl flex-col gap-0 p-0">
-        <ManagePendingOverlay show={isSaving} />
-        <DialogHeader className="border-b px-6 py-4">
-          <DialogTitle>
-            {isEdit ? 'Chỉnh sửa bài viết' : 'Tạo bài viết mới'}
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      <ManagePendingOverlay show={isSaving} />
+      <DialogHeader className="border-b px-6 py-4">
+        <DialogTitle>
+          {isEdit ? 'Chỉnh sửa bài viết' : 'Tạo bài viết mới'}
+        </DialogTitle>
+      </DialogHeader>
+      <FormProvider {...form}>
         <form
           onSubmit={handleSubmit(onSubmit, onInvalid)}
           className="flex min-h-0 flex-1 flex-col"
         >
+          <div className="border-b px-6 py-4">
+            <ArticleCategoryAuthorFields
+              categories={categories}
+              authors={authors}
+              categoryNameHint={article?.categoryName}
+              authorNameHint={article?.authorName}
+            />
+          </div>
+
           <Tabs defaultValue="basic" className="flex min-h-0 flex-1 flex-col">
             <TabsList className="mx-6 mt-4 w-auto justify-start">
               <TabsTrigger value="basic">Cơ bản</TabsTrigger>
@@ -202,7 +188,11 @@ export function ArticleFormDialog({
               <TabsTrigger value="settings">Cài đặt</TabsTrigger>
             </TabsList>
             <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
-              <TabsContent value="basic" className="mt-0 space-y-4">
+              <TabsContent
+                forceMount
+                value="basic"
+                className={cn(tabPanelClass, 'space-y-4')}
+              >
                 <div className="space-y-2">
                   <Label htmlFor="title">Tiêu đề *</Label>
                   <Input id="title" {...register('title')} />
@@ -236,53 +226,13 @@ export function ArticleFormDialog({
                   <Label htmlFor="excerpt">Mô tả ngắn (lead) *</Label>
                   <Textarea id="excerpt" rows={3} {...register('excerpt')} />
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Danh mục</Label>
-                    <Controller
-                      name="categoryId"
-                      control={control}
-                      render={({ field }) => (
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Chọn danh mục" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categoryOptions.map((c) => (
-                              <SelectItem key={c.id} value={c.id}>
-                                {c.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Tác giả</Label>
-                    <Controller
-                      name="authorId"
-                      control={control}
-                      render={({ field }) => (
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Chọn tác giả" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {authorOptions.map((a) => (
-                              <SelectItem key={a.id} value={a.id}>
-                                {a.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                  </div>
-                </div>
               </TabsContent>
 
-              <TabsContent value="content" className="mt-0 space-y-4">
+              <TabsContent
+                forceMount
+                value="content"
+                className={cn(tabPanelClass, 'space-y-4')}
+              >
                 <div className="space-y-2">
                   <Label>Nội dung bài</Label>
                   <p className="text-xs text-muted-foreground">
@@ -291,7 +241,9 @@ export function ArticleFormDialog({
                   <RichTextEditor
                     key={article?.id ?? 'new-article'}
                     value={watch('content') ?? ''}
-                    onChange={(html) => setValue('content', html, { shouldDirty: true })}
+                    onChange={(html) =>
+                      setValue('content', html, { shouldDirty: true })
+                    }
                   />
                 </div>
                 <div className="space-y-2">
@@ -300,13 +252,19 @@ export function ArticleFormDialog({
                 </div>
               </TabsContent>
 
-              <TabsContent value="media" className="mt-0 space-y-4">
+              <TabsContent
+                forceMount
+                value="media"
+                className={cn(tabPanelClass, 'space-y-4')}
+              >
                 <ImageUploadField
                   label="Ảnh bìa"
                   folder="covers"
                   required
                   value={watch('coverImage')}
-                  onChange={(url) => setValue('coverImage', url, { shouldValidate: true })}
+                  onChange={(url) =>
+                    setValue('coverImage', url, { shouldValidate: true })
+                  }
                 />
                 {watch('isEditorPick') ? (
                   <>
@@ -314,13 +272,17 @@ export function ArticleFormDialog({
                       label="Ảnh bìa (Biên tập chọn) - Mobile"
                       folder="editor-picks"
                       value={watch('editorPickCoverImageMobile') ?? ''}
-                      onChange={(url) => setValue('editorPickCoverImageMobile', url)}
+                      onChange={(url) =>
+                        setValue('editorPickCoverImageMobile', url)
+                      }
                     />
                     <ImageUploadField
                       label="Ảnh bìa (Biên tập chọn) - Desktop"
                       folder="editor-picks"
                       value={watch('editorPickCoverImageDesktop') ?? ''}
-                      onChange={(url) => setValue('editorPickCoverImageDesktop', url)}
+                      onChange={(url) =>
+                        setValue('editorPickCoverImageDesktop', url)
+                      }
                     />
                   </>
                 ) : null}
@@ -332,7 +294,11 @@ export function ArticleFormDialog({
                 />
               </TabsContent>
 
-              <TabsContent value="seo" className="mt-0 space-y-4">
+              <TabsContent
+                forceMount
+                value="seo"
+                className={cn(tabPanelClass, 'space-y-4')}
+              >
                 <div className="space-y-2">
                   <Label htmlFor="metaTitle">Meta title</Label>
                   <Input
@@ -360,7 +326,11 @@ export function ArticleFormDialog({
                 </div>
               </TabsContent>
 
-              <TabsContent value="settings" className="mt-0 space-y-4">
+              <TabsContent
+                forceMount
+                value="settings"
+                className={cn(tabPanelClass, 'space-y-4')}
+              >
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="publishedAt">Ngày xuất bản</Label>
@@ -442,7 +412,7 @@ export function ArticleFormDialog({
             </ManageLoadingButton>
           </DialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </FormProvider>
+    </>
   );
 }

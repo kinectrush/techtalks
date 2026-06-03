@@ -30,8 +30,14 @@ export const adminArticleSchema = z.object({
   ogImage: z.string().url().optional().or(z.literal('')),
   canonicalUrl: z.string().url().optional().or(z.literal('')),
   affiliateUrl: z.string().url().optional().or(z.literal('')),
-  categoryId: z.string().uuid('Select a category'),
-  authorId: z.string().uuid('Select an author'),
+  categoryId: z
+    .string()
+    .min(1, 'Vui lòng chọn danh mục')
+    .uuid('Vui lòng chọn danh mục'),
+  authorId: z
+    .string()
+    .min(1, 'Vui lòng chọn tác giả')
+    .uuid('Vui lòng chọn tác giả'),
   publishedAt: z.string().min(1, 'Published date is required'),
   status: z.enum(['draft', 'published', 'archived']),
   isActive: z.boolean(),
