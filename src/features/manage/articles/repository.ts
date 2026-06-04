@@ -1,6 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import {
+  mapDbArticleDetailBanner,
+  toDbArticleDetailBanner,
+} from '@/lib/article-detail-banners';
 import { slugify } from '@/lib/slug';
+import type { ReviewEngagement } from '@/types/review';
 import type { AdminArticleInput, AdminArticleRow } from '@/types/admin';
 
 const DUPLICATE_TITLE_PREFIX = '(copy) ';
@@ -34,6 +39,9 @@ type DbArticle = {
   meta_keywords: string | null;
   is_editor_pick: boolean;
   created_at: string;
+  engagement?: ReviewEngagement | null;
+  detail_ad_banner_desktop?: unknown;
+  detail_ad_banner_mobile?: unknown;
   categories?: { name: string } | { name: string }[] | null;
   authors?: { name: string } | { name: string }[] | null;
 };
@@ -83,6 +91,12 @@ function mapArticle(row: DbArticle): AdminArticleRow {
     metaKeywords: row.meta_keywords,
     isEditorPick: row.is_editor_pick,
     createdAt: row.created_at,
+    views: row.engagement?.views ?? 0,
+    likes: row.engagement?.reactions ?? 0,
+    detailAdBannerDesktop: mapDbArticleDetailBanner(
+      row.detail_ad_banner_desktop,
+    ),
+    detailAdBannerMobile: mapDbArticleDetailBanner(row.detail_ad_banner_mobile),
   };
 }
 
@@ -115,6 +129,12 @@ function toDbPayload(input: AdminArticleInput, partial = false) {
     meta_description: input.metaDescription ?? null,
     meta_keywords: input.metaKeywords ?? null,
     is_editor_pick: input.isEditorPick ?? false,
+    detail_ad_banner_desktop: toDbArticleDetailBanner(
+      input.detailAdBannerDesktop ?? undefined,
+    ),
+    detail_ad_banner_mobile: toDbArticleDetailBanner(
+      input.detailAdBannerMobile ?? undefined,
+    ),
     updated_at: new Date().toISOString(),
   };
 
@@ -142,7 +162,8 @@ const SELECT = `
   category_id, author_id, published_at, updated_at,
   status, is_active, rating, pros, cons, tags,
   meta_title, meta_description, meta_keywords,
-  is_editor_pick, created_at,
+  is_editor_pick, created_at, engagement,
+  detail_ad_banner_desktop, detail_ad_banner_mobile,
   categories ( name ),
   authors ( name )
 `;
@@ -296,6 +317,8 @@ export async function duplicateAdminArticle(
     metaDescription: source.metaDescription ?? undefined,
     metaKeywords: source.metaKeywords ?? undefined,
     isEditorPick: false,
+    detailAdBannerDesktop: source.detailAdBannerDesktop,
+    detailAdBannerMobile: source.detailAdBannerMobile,
   };
 
   return createAdminArticle(supabase, input);

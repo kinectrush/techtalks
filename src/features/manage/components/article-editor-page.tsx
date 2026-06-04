@@ -42,6 +42,10 @@ import {
   buildArticleFormDefaults,
   type ArticleFormOption,
 } from '@/features/manage/articles/form-options';
+import {
+  ARTICLE_DETAIL_BANNER_DESKTOP_ASPECT,
+  ARTICLE_DETAIL_BANNER_MOBILE_ASPECT,
+} from '@/lib/ad-banners/constants';
 import { slugify } from '@/lib/slug';
 import { cn } from '@/lib/utils';
 import type { AdminArticleRow } from '@/types/admin';
@@ -171,6 +175,7 @@ function ArticleEditorForm({
               <TabsTrigger value="content">Nội dung</TabsTrigger>
               <TabsTrigger value="media">Ảnh</TabsTrigger>
               <TabsTrigger value="seo">SEO / Meta</TabsTrigger>
+              <TabsTrigger value="ad-banner">Banner QC</TabsTrigger>
               <TabsTrigger value="settings">Cài đặt</TabsTrigger>
             </TabsList>
 
@@ -297,6 +302,107 @@ function ArticleEditorForm({
                 <div className="space-y-2">
                   <Label htmlFor="canonicalUrl">Canonical URL</Label>
                   <Input id="canonicalUrl" {...register('canonicalUrl')} />
+                </div>
+              </TabsContent>
+
+              <TabsContent
+                forceMount
+                value="ad-banner"
+                className={cn(tabPanelClass, 'space-y-6')}
+              >
+                <p className="text-sm text-muted-foreground">
+                  Banner quảng cáo riêng cho trang chi tiết bài viết này (không
+                  dùng chung với menu Banner site).
+                </p>
+                <div className="space-y-4 rounded-lg border p-4">
+                  <p className="text-sm font-medium">
+                    Desktop — cột phải (
+                    {ARTICLE_DETAIL_BANNER_DESKTOP_ASPECT === '9/16'
+                      ? '9:16'
+                      : '16:9'}
+                    )
+                  </p>
+                  <ImageUploadField
+                    label="Ảnh banner desktop"
+                    folder="banners"
+                    value={watch('detailAdBannerDesktopImageUrl') ?? ''}
+                    onChange={(url) =>
+                      setValue('detailAdBannerDesktopImageUrl', url, {
+                        shouldDirty: true,
+                      })
+                    }
+                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="detailAdBannerDesktopLinkUrl">
+                      Link khi click (tùy chọn)
+                    </Label>
+                    <Input
+                      id="detailAdBannerDesktopLinkUrl"
+                      type="url"
+                      placeholder="https://..."
+                      {...register('detailAdBannerDesktopLinkUrl')}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between rounded-lg border p-3">
+                    <div>
+                      <p className="text-sm font-medium">Hiển thị banner desktop</p>
+                      <p className="text-xs text-muted-foreground">
+                        Cần có ảnh và bật active
+                      </p>
+                    </div>
+                    <Switch
+                      checked={watch('detailAdBannerDesktopActive') ?? false}
+                      disabled={isSaving}
+                      onCheckedChange={(v) =>
+                        setValue('detailAdBannerDesktopActive', v)
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="space-y-4 rounded-lg border p-4">
+                  <p className="text-sm font-medium">
+                    Mobile — dưới tags (
+                    {ARTICLE_DETAIL_BANNER_MOBILE_ASPECT === '16/9'
+                      ? '16:9'
+                      : '9:16'}
+                    )
+                  </p>
+                  <ImageUploadField
+                    label="Ảnh banner mobile"
+                    folder="banners"
+                    value={watch('detailAdBannerMobileImageUrl') ?? ''}
+                    onChange={(url) =>
+                      setValue('detailAdBannerMobileImageUrl', url, {
+                        shouldDirty: true,
+                      })
+                    }
+                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="detailAdBannerMobileLinkUrl">
+                      Link khi click (tùy chọn)
+                    </Label>
+                    <Input
+                      id="detailAdBannerMobileLinkUrl"
+                      type="url"
+                      placeholder="https://..."
+                      {...register('detailAdBannerMobileLinkUrl')}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between rounded-lg border p-3">
+                    <div>
+                      <p className="text-sm font-medium">Hiển thị banner mobile</p>
+                      <p className="text-xs text-muted-foreground">
+                        Cần có ảnh và bật active
+                      </p>
+                    </div>
+                    <Switch
+                      checked={watch('detailAdBannerMobileActive') ?? false}
+                      disabled={isSaving}
+                      onCheckedChange={(v) =>
+                        setValue('detailAdBannerMobileActive', v)
+                      }
+                    />
+                  </div>
                 </div>
               </TabsContent>
 

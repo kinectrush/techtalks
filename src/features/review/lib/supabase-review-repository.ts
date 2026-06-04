@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { mapDbArticleDetailBanner } from '@/lib/article-detail-banners';
 import {
   EXCLUDED_PUBLIC_CATEGORY_SLUGS,
   filterPublicCategories,
@@ -36,6 +37,8 @@ type ArticleRow = {
   affiliate_links: ReviewArticle['affiliateLinks'];
   engagement: ReviewEngagement;
   is_editor_pick: boolean;
+  detail_ad_banner_desktop?: unknown;
+  detail_ad_banner_mobile?: unknown;
   categories: CategoryRow | CategoryRow[] | null;
   authors: AuthorRow | AuthorRow[] | null;
 };
@@ -88,6 +91,8 @@ function mapRow(row: ArticleRow): ReviewArticle | null {
     affiliateLinks: row.affiliate_links ?? undefined,
     engagement: row.engagement,
     isEditorPick: row.is_editor_pick,
+    detailAdBannerDesktop: mapDbArticleDetailBanner(row.detail_ad_banner_desktop),
+    detailAdBannerMobile: mapDbArticleDetailBanner(row.detail_ad_banner_mobile),
   };
 }
 
@@ -114,6 +119,12 @@ const ARTICLE_SELECT = `
   is_editor_pick,
   categories ( id, slug, name ),
   authors ( id, name, avatar_url )
+`;
+
+const ARTICLE_DETAIL_SELECT = `
+  ${ARTICLE_SELECT.trim()},
+  detail_ad_banner_desktop,
+  detail_ad_banner_mobile
 `;
 
 // Backward compatible select for when migrations haven't run yet (missing columns → 42703).
@@ -205,22 +216,34 @@ export async function fetchPublishedArticleBySlug(
   supabase: SupabaseClient,
   slug: string,
 ): Promise<ReviewArticle | null> {
-  let { data, error } = (await supabase
-    .from('review_articles')
-    .select(ARTICLE_SELECT)
-    .eq('slug', slug)
-    .eq('status', 'published')
-    .eq('is_active', true)
-    .maybeSingle()) as unknown as { data: unknown; error: unknown };
-
-  if (isMissingColumnError(error as PostgrestErrorLike)) {
-    const retry = (await supabase
+  const run = (select: string) =>
+    supabase
       .from('review_articles')
-      .select(ARTICLE_SELECT_LEGACY)
+      .select(select)
       .eq('slug', slug)
       .eq('status', 'published')
       .eq('is_active', true)
-      .maybeSingle()) as unknown as { data: unknown; error: unknown };
+      .maybeSingle();
+
+  let { data, error } = (await run(ARTICLE_DETAIL_SELECT)) as unknown as {
+    data: unknown;
+    error: unknown;
+  };
+
+  if (isMissingColumnError(error as PostgrestErrorLike)) {
+    const retry = (await run(ARTICLE_SELECT)) as unknown as {
+      data: unknown;
+      error: unknown;
+    };
+    data = retry.data;
+    error = retry.error;
+  }
+
+  if (isMissingColumnError(error as PostgrestErrorLike)) {
+    const retry = (await run(ARTICLE_SELECT_LEGACY)) as unknown as {
+      data: unknown;
+      error: unknown;
+    };
     data = retry.data;
     error = retry.error;
   }

@@ -2,8 +2,8 @@ import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
 
 import { AdBannerSlot } from '@/features/ad-banners/components/ad-banner-slot';
+import { activeArticleDetailBanner } from '@/lib/article-detail-banners';
 import { cn } from '@/lib/utils';
-import type { ActiveAdBannersMap } from '@/types/ad-banner';
 import type { ReviewSummary } from '@/types/review';
 
 import { ArticleContent } from './article-content';
@@ -14,13 +14,11 @@ import { StarRating } from './star-rating';
 type ReviewDetailViewProps = {
   article: ReviewSummary;
   locale: string;
-  adBanners?: ActiveAdBannersMap;
 };
 
 export async function ReviewDetailView({
   article,
   locale,
-  adBanners = {},
 }: ReviewDetailViewProps) {
   const t = await getTranslations('Review');
   const hasContent = Boolean(article.content?.trim());
@@ -28,8 +26,8 @@ export async function ReviewDetailView({
   const authorName =
     article.author.name === 'Editorial' ? 'Admin' : article.author.name;
 
-  const desktopBanner = adBanners.review_detail_desktop;
-  const mobileBanner = adBanners.review_detail_mobile;
+  const desktopBanner = activeArticleDetailBanner(article.detailAdBannerDesktop);
+  const mobileBanner = activeArticleDetailBanner(article.detailAdBannerMobile);
 
   return (
     <div

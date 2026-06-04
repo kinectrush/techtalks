@@ -20,6 +20,8 @@ export type AdminCategory = {
   createdAt: string;
 };
 
+import type { ArticleDetailAdBanner } from '@/lib/article-detail-banners';
+
 export type AdminCategoryInput = {
   slug: string;
   name: string;
@@ -56,6 +58,10 @@ export type AdminArticleRow = {
   metaKeywords: string | null;
   isEditorPick: boolean;
   createdAt: string;
+  views: number;
+  likes: number;
+  detailAdBannerDesktop: ArticleDetailAdBanner | null;
+  detailAdBannerMobile: ArticleDetailAdBanner | null;
 };
 
 export type AdminArticleInput = {
@@ -83,6 +89,8 @@ export type AdminArticleInput = {
   metaDescription?: string;
   metaKeywords?: string;
   isEditorPick?: boolean;
+  detailAdBannerDesktop?: ArticleDetailAdBanner | null;
+  detailAdBannerMobile?: ArticleDetailAdBanner | null;
 };
 
 export type AdminUserInput = {

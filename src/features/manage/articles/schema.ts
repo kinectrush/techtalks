@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import type { ArticleDetailAdBanner } from '@/lib/article-detail-banners';
+
 function pad2(n: number) {
   return String(n).padStart(2, '0');
 }
@@ -47,6 +49,12 @@ export const adminArticleSchema = z.object({
   metaDescription: z.string().max(320).optional(),
   metaKeywords: z.string().optional(),
   isEditorPick: z.boolean().optional(),
+  detailAdBannerDesktopImageUrl: z.string().url().optional().or(z.literal('')),
+  detailAdBannerDesktopLinkUrl: z.string().url().optional().or(z.literal('')),
+  detailAdBannerDesktopActive: z.boolean().optional(),
+  detailAdBannerMobileImageUrl: z.string().url().optional().or(z.literal('')),
+  detailAdBannerMobileLinkUrl: z.string().url().optional().or(z.literal('')),
+  detailAdBannerMobileActive: z.boolean().optional(),
 });
 
 export type AdminArticleFormValues = z.infer<typeof adminArticleSchema>;
@@ -94,6 +102,38 @@ export function formValuesToArticleInput(
     metaDescription: values.metaDescription,
     metaKeywords: values.metaKeywords,
     isEditorPick: values.isEditorPick ?? false,
+    detailAdBannerDesktop: formValuesToDetailBanner(
+      values.detailAdBannerDesktopImageUrl,
+      values.detailAdBannerDesktopLinkUrl,
+      values.detailAdBannerDesktopActive,
+    ),
+    detailAdBannerMobile: formValuesToDetailBanner(
+      values.detailAdBannerMobileImageUrl,
+      values.detailAdBannerMobileLinkUrl,
+      values.detailAdBannerMobileActive,
+    ),
+  };
+}
+
+function formValuesToDetailBanner(
+  imageUrl?: string,
+  linkUrl?: string,
+  isActive?: boolean,
+): ArticleDetailAdBanner | null {
+  const url = imageUrl?.trim();
+  if (!url) return null;
+  return {
+    imageUrl: url,
+    linkUrl: linkUrl?.trim() || null,
+    isActive: isActive ?? true,
+  };
+}
+
+function detailBannerToFormFields(banner: ArticleDetailAdBanner | null) {
+  return {
+    imageUrl: banner?.imageUrl ?? '',
+    linkUrl: banner?.linkUrl ?? '',
+    isActive: banner?.isActive ?? false,
   };
 }
 
@@ -123,5 +163,23 @@ export function articleToFormValues(
     metaDescription: article.metaDescription ?? '',
     metaKeywords: article.metaKeywords ?? '',
     isEditorPick: article.isEditorPick,
+    detailAdBannerDesktopImageUrl: detailBannerToFormFields(
+      article.detailAdBannerDesktop,
+    ).imageUrl,
+    detailAdBannerDesktopLinkUrl: detailBannerToFormFields(
+      article.detailAdBannerDesktop,
+    ).linkUrl,
+    detailAdBannerDesktopActive: detailBannerToFormFields(
+      article.detailAdBannerDesktop,
+    ).isActive,
+    detailAdBannerMobileImageUrl: detailBannerToFormFields(
+      article.detailAdBannerMobile,
+    ).imageUrl,
+    detailAdBannerMobileLinkUrl: detailBannerToFormFields(
+      article.detailAdBannerMobile,
+    ).linkUrl,
+    detailAdBannerMobileActive: detailBannerToFormFields(
+      article.detailAdBannerMobile,
+    ).isActive,
   };
 }

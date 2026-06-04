@@ -1,6 +1,6 @@
 'use client';
 
-import { Copy, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { Copy, Eye, Pencil, Plus, Search, ThumbsUp, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -38,6 +38,7 @@ import { ManageActionButton } from '@/features/manage/components/manage-action-b
 import { ManageLoadingButton } from '@/features/manage/components/manage-loading-button';
 import { ManagePendingOverlay } from '@/features/manage/components/manage-pending-overlay';
 import { usePendingKeys } from '@/features/manage/hooks/use-pending-keys';
+import { formatNumber } from '@/lib/format';
 import type { AdminArticleRow } from '@/types/admin';
 
 type Option = { id: string; name: string; slug?: string };
@@ -179,6 +180,8 @@ export function ArticlesManager({
             <TableHeader>
               <TableRow>
                 <TableHead>Tiêu đề</TableHead>
+                <TableHead className="text-right">Lượt xem</TableHead>
+                <TableHead className="text-right">Like</TableHead>
                 <TableHead>Trạng thái</TableHead>
                 <TableHead>Active</TableHead>
                 <TableHead className="w-[150px]">Thao tác</TableHead>
@@ -188,7 +191,7 @@ export function ArticlesManager({
               {articles.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={4}
+                    colSpan={6}
                     className="text-center text-muted-foreground"
                   >
                     Chưa có bài viết
@@ -204,6 +207,18 @@ export function ArticlesManager({
                           /{article.slug}
                         </p>
                       </div>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      <span className="inline-flex items-center justify-end gap-1 text-sm text-muted-foreground">
+                        <Eye className="h-3.5 w-3.5 shrink-0" />
+                        {formatNumber(article.views, 'vi')}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      <span className="inline-flex items-center justify-end gap-1 text-sm text-muted-foreground">
+                        <ThumbsUp className="h-3.5 w-3.5 shrink-0" />
+                        {formatNumber(article.likes, 'vi')}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">{article.status}</Badge>

@@ -6,6 +6,8 @@ export type ReactionType =
   | 'sad'
   | 'angry';
 
+import type { ArticleDetailAdBanner } from '@/lib/article-detail-banners';
+
 export type ReviewStatus = 'draft' | 'published' | 'archived';
 
 /** Engagement counters — window fields power Trending/Hot */
@@ -73,6 +75,8 @@ export type ReviewArticle = {
   affiliateLinks?: AffiliateLink[];
   engagement: ReviewEngagement;
   isEditorPick?: boolean;
+  detailAdBannerDesktop?: ArticleDetailAdBanner | null;
+  detailAdBannerMobile?: ArticleDetailAdBanner | null;
 };
 
 /** Lightweight card / list item (includes precomputed trending) */

@@ -121,8 +121,9 @@ export function BannersManager({ initialBanners }: BannersManagerProps) {
           <div>
             <h1 className="text-2xl font-bold">Quản lý banner quảng cáo</h1>
             <p className="text-sm text-muted-foreground">
-              Upload banner cho trang chủ, reviews và chi tiết bài viết. Chỉ
-              banner đang active mới hiển thị trên site.
+              Upload banner cho trang chủ và trang Reviews. Banner chi tiết bài
+              viết cấu hình trong từng bài (tab Banner QC). Chỉ banner đang
+              active mới hiển thị trên site.
             </p>
           </div>
           <Button onClick={openCreate} disabled={tableBusy}>

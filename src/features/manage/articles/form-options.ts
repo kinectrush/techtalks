@@ -51,5 +51,11 @@ export function buildArticleFormDefaults(
     metaDescription: '',
     metaKeywords: '',
     isEditorPick: false,
+    detailAdBannerDesktopImageUrl: '',
+    detailAdBannerDesktopLinkUrl: '',
+    detailAdBannerDesktopActive: false,
+    detailAdBannerMobileImageUrl: '',
+    detailAdBannerMobileLinkUrl: '',
+    detailAdBannerMobileActive: false,
   };
 }
