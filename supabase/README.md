@@ -25,6 +25,7 @@ Chạy **theo thứ tự** trong [SQL Editor](https://supabase.com/dashboard/pro
 4. `supabase/migrations/20250602000000_remove_general_category.sql`
 5. `supabase/migrations/20250603000000_ad_banners.sql`
 6. `supabase/migrations/20250604000000_article_detail_ad_banners.sql`
+7. `supabase/migrations/20250605000000_review_detail_popup_banner_placement.sql`
 
 Hoặc CLI:
 
@@ -42,7 +43,8 @@ supabase db push
 | `review_articles` | Bài viết + SEO/meta + `is_active` |
 | `admin_users` | User đăng nhập `/manage/admin` (mật khẩu bcrypt) |
 | `ad_banners` | Banner site-wide (trang chủ, reviews) |
-| `review_articles.detail_ad_banner_*` | Banner QC theo từng bài (chi tiết bài viết) |
+| `review_articles.detail_ad_banner_*` | Banner QC theo từng bài (desktop, mobile) |
+| `ad_banners.review_detail_popup` | Popup dialog giữa màn hình — tất cả trang chi tiết |
 
 Migration `20250601100000` tạo user `kinectrush` (mật khẩu đã hash, không lưu plain text trong DB).
 

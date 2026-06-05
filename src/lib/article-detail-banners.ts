@@ -53,3 +53,4 @@ export function activeArticleDetailBanner(
   if (!banner?.isActive || !banner.imageUrl) return null;
   return { imageUrl: banner.imageUrl, linkUrl: banner.linkUrl };
 }
+

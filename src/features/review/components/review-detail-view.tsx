@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
 
+import { getActiveAdBannersCached } from '@/features/ad-banners/actions';
 import { AdBannerSlot } from '@/features/ad-banners/components/ad-banner-slot';
 import { activeArticleDetailBanner } from '@/lib/article-detail-banners';
 import { cn } from '@/lib/utils';
@@ -8,6 +9,7 @@ import type { ReviewSummary } from '@/types/review';
 
 import { ArticleContent } from './article-content';
 import { AffiliateAutoOpen } from './affiliate-auto-open';
+import { ArticleDetailBannerDialog } from './article-detail-banner-dialog';
 import { ReviewEngagementBar } from './review-engagement-bar';
 import { StarRating } from './star-rating';
 
@@ -26,8 +28,10 @@ export async function ReviewDetailView({
   const authorName =
     article.author.name === 'Editorial' ? 'Admin' : article.author.name;
 
+  const adBanners = await getActiveAdBannersCached();
   const desktopBanner = activeArticleDetailBanner(article.detailAdBannerDesktop);
   const mobileBanner = activeArticleDetailBanner(article.detailAdBannerMobile);
+  const popupBanner = adBanners.review_detail_popup;
 
   return (
     <div
@@ -37,6 +41,13 @@ export async function ReviewDetailView({
           'lg:mx-auto lg:flex lg:max-w-7xl lg:justify-center lg:gap-10',
       )}
     >
+      {popupBanner ? (
+        <ArticleDetailBannerDialog
+          imageUrl={popupBanner.imageUrl}
+          linkUrl={popupBanner.linkUrl}
+        />
+      ) : null}
+
       <article
         className={cn(
           'mx-auto w-full max-w-3xl',

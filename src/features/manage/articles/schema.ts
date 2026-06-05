@@ -140,6 +140,9 @@ function detailBannerToFormFields(banner: ArticleDetailAdBanner | null) {
 export function articleToFormValues(
   article: import('@/types/admin').AdminArticleRow,
 ): AdminArticleFormValues {
+  const desktop = detailBannerToFormFields(article.detailAdBannerDesktop);
+  const mobile = detailBannerToFormFields(article.detailAdBannerMobile);
+
   return {
     title: article.title,
     slug: article.slug,
@@ -163,23 +166,11 @@ export function articleToFormValues(
     metaDescription: article.metaDescription ?? '',
     metaKeywords: article.metaKeywords ?? '',
     isEditorPick: article.isEditorPick,
-    detailAdBannerDesktopImageUrl: detailBannerToFormFields(
-      article.detailAdBannerDesktop,
-    ).imageUrl,
-    detailAdBannerDesktopLinkUrl: detailBannerToFormFields(
-      article.detailAdBannerDesktop,
-    ).linkUrl,
-    detailAdBannerDesktopActive: detailBannerToFormFields(
-      article.detailAdBannerDesktop,
-    ).isActive,
-    detailAdBannerMobileImageUrl: detailBannerToFormFields(
-      article.detailAdBannerMobile,
-    ).imageUrl,
-    detailAdBannerMobileLinkUrl: detailBannerToFormFields(
-      article.detailAdBannerMobile,
-    ).linkUrl,
-    detailAdBannerMobileActive: detailBannerToFormFields(
-      article.detailAdBannerMobile,
-    ).isActive,
+    detailAdBannerDesktopImageUrl: desktop.imageUrl,
+    detailAdBannerDesktopLinkUrl: desktop.linkUrl,
+    detailAdBannerDesktopActive: desktop.isActive,
+    detailAdBannerMobileImageUrl: mobile.imageUrl,
+    detailAdBannerMobileLinkUrl: mobile.linkUrl,
+    detailAdBannerMobileActive: mobile.isActive,
   };
 }
