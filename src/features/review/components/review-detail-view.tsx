@@ -6,7 +6,16 @@ import { getActiveAdBannersCached } from '@/features/ad-banners/actions';
 import { AdBannerSlot } from '@/features/ad-banners/components/ad-banner-slot';
 import { activeArticleDetailBanner } from '@/lib/article-detail-banners';
 import { cn } from '@/lib/utils';
-import type { ReviewSummary } from '@/types/review';
+import type { ReviewSummary, ReviewTag } from '@/types/review';
+
+function dedupeTagsBySlug(tags: ReviewTag[]): ReviewTag[] {
+  const seen = new Set<string>();
+  return tags.filter((tag) => {
+    if (seen.has(tag.slug)) return false;
+    seen.add(tag.slug);
+    return true;
+  });
+}
 
 import { ArticleContent } from './article-content';
 import { AffiliateAutoOpen } from './affiliate-auto-open';
@@ -122,7 +131,7 @@ export async function ReviewDetailView({
 
         {article.tags.length > 0 ? (
           <ul className="mt-10 flex flex-wrap gap-2 border-t pt-6">
-            {article.tags.map((tag) => (
+            {dedupeTagsBySlug(article.tags).map((tag) => (
               <li key={tag.slug}>
                 <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
                   #{tag.name}

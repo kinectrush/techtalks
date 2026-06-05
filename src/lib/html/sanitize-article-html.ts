@@ -1,5 +1,20 @@
 import sanitizeHtml from 'sanitize-html';
 
+const EVAL_BOX_CLASSES = [
+  'article-eval-box',
+  'article-eval-box__title',
+  'article-eval-box__header',
+  'article-eval-box__rows',
+  'article-eval-box__row',
+  'article-eval-box__col',
+  'article-eval-box__col--score',
+  'article-eval-box__label',
+  'article-eval-box__score',
+] as const;
+
+/** Editor-only; strip from published HTML if present. */
+const EDITOR_ONLY_CLASSES = new Set(['article-eval-box--editor', 'article-eval-box__row--editor']);
+
 const ALLOWED_TAGS = [
   'p',
   'h2',
@@ -18,6 +33,8 @@ const ALLOWED_TAGS = [
   'figure',
   'figcaption',
   'hr',
+  'div',
+  'span',
 ];
 
 const ALLOWED_ATTR: Record<string, string[]> = {
@@ -33,6 +50,13 @@ const ALLOWED_ATTR: Record<string, string[]> = {
   blockquote: ['class'],
   figure: ['class'],
   figcaption: ['class'],
+  div: ['class', 'data-type'],
+  span: ['class'],
+};
+
+const ALLOWED_CLASSES: Record<string, string[]> = {
+  div: [...EVAL_BOX_CLASSES],
+  span: [...EVAL_BOX_CLASSES],
 };
 
 /** Sanitize Tiptap HTML before rendering on the public site (Node-safe, no jsdom). */
@@ -43,6 +67,19 @@ export function sanitizeArticleHtml(html: string): string {
     return sanitizeHtml(html, {
       allowedTags: ALLOWED_TAGS,
       allowedAttributes: ALLOWED_ATTR,
+      allowedClasses: ALLOWED_CLASSES,
+      transformTags: {
+        div: (tagName, attribs) => {
+          if (!attribs.class) return { tagName, attribs };
+          const classes = attribs.class
+            .split(/\s+/)
+            .filter((c) => c && !EDITOR_ONLY_CLASSES.has(c));
+          return {
+            tagName,
+            attribs: classes.length ? { ...attribs, class: classes.join(' ') } : attribs,
+          };
+        },
+      },
       allowedSchemes: ['http', 'https', 'mailto'],
       allowedSchemesByTag: {
         img: ['http', 'https'],

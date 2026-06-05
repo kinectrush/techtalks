@@ -18,12 +18,14 @@ import {
   List,
   ListOrdered,
   Quote,
+  TableProperties,
   Underline as UnderlineIcon,
 } from 'lucide-react';
 import { useCallback, useRef, type ReactNode } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import { EvaluationBox } from '@/components/editor/extensions/evaluation-box';
 import { uploadImageClient } from '@/lib/upload-client';
 import { cn } from '@/lib/utils';
 
@@ -120,6 +122,7 @@ export function RichTextEditor({
       Underline,
       Link.configure({ openOnClick: false }),
       LinkedImage.configure({ inline: false, allowBase64: false }),
+      EvaluationBox,
       Placeholder.configure({ placeholder }),
     ],
     content: value || '',
@@ -232,6 +235,13 @@ export function RichTextEditor({
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
         >
           <Quote className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          title="Chèn bảng điểm"
+          active={editor.isActive('evaluationBox')}
+          onClick={() => editor.chain().focus().insertEvaluationBox().run()}
+        >
+          <TableProperties className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
           title="Liên kết"

@@ -62,20 +62,29 @@ export type AdminArticleFormValues = z.infer<typeof adminArticleSchema>;
 export function formValuesToArticleInput(
   values: AdminArticleFormValues,
 ): import('@/types/admin').AdminArticleInput {
-  const parseTags = (text?: string) =>
-    text
-      ?.split(',')
-      .map((t) => t.trim())
-      .filter(Boolean)
-      .map((name) => ({
-        name,
-        slug: name
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-+|-+$/g, ''),
-      })) ?? [];
+  const parseTags = (text?: string) => {
+    const seen = new Set<string>();
+    return (
+      text
+        ?.split(',')
+        .map((t) => t.trim())
+        .filter(Boolean)
+        .map((name) => ({
+          name,
+          slug: name
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, ''),
+        }))
+        .filter((tag) => {
+          if (!tag.slug || seen.has(tag.slug)) return false;
+          seen.add(tag.slug);
+          return true;
+        }) ?? []
+    );
+  };
 
   return {
     title: values.title,
