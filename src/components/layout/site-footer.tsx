@@ -42,7 +42,7 @@ export async function SiteFooter() {
             <p className="text-sm font-semibold text-foreground">Liên hệ</p>
             <div className="flex items-center gap-2 md:justify-end">
               <a
-                href="https://www.facebook.com/congminh.tran.142/"
+                href="https://www.facebook.com/techtalks.io.vn/"
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-sm text-muted-foreground hover:text-foreground"
