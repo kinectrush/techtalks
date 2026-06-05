@@ -42,6 +42,10 @@ export function enrichSummaries(articles: ReviewArticle[]): ReviewSummary[] {
   return publishedOnly(articles).map(toSummary);
 }
 
+export function articleToSummary(article: ReviewArticle): ReviewSummary {
+  return toSummary(article);
+}
+
 function withListBadges(summaries: ReviewSummary[]): ReviewSummary[] {
   const newestIds = new Set(
     [...summaries]

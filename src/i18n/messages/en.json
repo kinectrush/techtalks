@@ -40,6 +40,7 @@
     "views": "views",
     "comingSoon": "Content coming soon",
     "contentEmpty": "This article has no detailed body yet.",
+    "draftPreviewBanner": "Preview mode — this article is not publicly visible yet.",
     "detailBannerTitle": "Advertisement banner",
     "detailBannerClose": "Close banner",
     "detailBannerOpenLink": "Open banner link",
@@ -99,6 +100,14 @@
   "Products": {
     "title": "Products",
     "empty": "No products found"
+  },
+  "NotFound": {
+    "title": "Oops! This page took a wrong turn",
+    "subtitle": "The link you followed doesn't exist — or it got upgraded to a newer version.",
+    "hint": "No worries — TechTalks still has plenty of cool stuff to explore!",
+    "ctaHome": "Back to home",
+    "ctaReviews": "Browse articles",
+    "errorCode": "404"
   },
   "Validation": {
     "emailRequired": "Email is required",

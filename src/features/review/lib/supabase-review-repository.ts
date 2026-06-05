@@ -212,18 +212,18 @@ export async function fetchPublishedArticles(
     .filter((row): row is ReviewArticle => row != null);
 }
 
-export async function fetchPublishedArticleBySlug(
+async function fetchArticleRowBySlug(
   supabase: SupabaseClient,
   slug: string,
+  options?: { draftPreview?: boolean },
 ): Promise<ReviewArticle | null> {
-  const run = (select: string) =>
-    supabase
-      .from('review_articles')
-      .select(select)
-      .eq('slug', slug)
-      .eq('status', 'published')
-      .eq('is_active', true)
-      .maybeSingle();
+  const run = (select: string) => {
+    let q = supabase.from('review_articles').select(select).eq('slug', slug);
+    if (!options?.draftPreview) {
+      q = q.eq('status', 'published').eq('is_active', true);
+    }
+    return q.maybeSingle();
+  };
 
   let { data, error } = (await run(ARTICLE_DETAIL_SELECT)) as unknown as {
     data: unknown;
@@ -251,6 +251,21 @@ export async function fetchPublishedArticleBySlug(
   if (error) throw error as never;
   if (!data) return null;
   return mapRow(data as ArticleRow);
+}
+
+export async function fetchPublishedArticleBySlug(
+  supabase: SupabaseClient,
+  slug: string,
+): Promise<ReviewArticle | null> {
+  return fetchArticleRowBySlug(supabase, slug);
+}
+
+/** Slug lookup without published/active filters — for `?view=draft` editor preview. */
+export async function fetchDraftPreviewArticleBySlug(
+  supabase: SupabaseClient,
+  slug: string,
+): Promise<ReviewArticle | null> {
+  return fetchArticleRowBySlug(supabase, slug, { draftPreview: true });
 }
 
 export async function fetchActiveCategories(

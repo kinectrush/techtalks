@@ -1,3 +1,4 @@
+import { Eye } from 'lucide-react';
 import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
 
@@ -16,11 +17,13 @@ import { StarRating } from './star-rating';
 type ReviewDetailViewProps = {
   article: ReviewSummary;
   locale: string;
+  isDraftPreview?: boolean;
 };
 
 export async function ReviewDetailView({
   article,
   locale,
+  isDraftPreview = false,
 }: ReviewDetailViewProps) {
   const t = await getTranslations('Review');
   const hasContent = Boolean(article.content?.trim());
@@ -41,6 +44,13 @@ export async function ReviewDetailView({
           'lg:mx-auto lg:flex lg:max-w-7xl lg:justify-center lg:gap-10',
       )}
     >
+      {isDraftPreview ? (
+        <div className="mx-auto mb-6 flex max-w-3xl items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-950 dark:text-amber-100">
+          <Eye className="h-4 w-4 shrink-0" aria-hidden />
+          <p>{t('draftPreviewBanner')}</p>
+        </div>
+      ) : null}
+
       {popupBanner ? (
         <ArticleDetailBannerDialog
           imageUrl={popupBanner.imageUrl}

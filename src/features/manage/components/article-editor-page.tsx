@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   FormProvider,
@@ -86,6 +86,10 @@ function ArticleEditorForm({
 
   const { register, handleSubmit, watch, setValue, formState } = form;
   const title = watch('title');
+  const slug = watch('slug');
+  const previewHref = slug.trim()
+    ? `/review/${encodeURIComponent(slug.trim())}?view=draft`
+    : null;
 
   useEffect(() => {
     if (!slugTouched && title && !isEdit) {
@@ -142,14 +146,24 @@ function ArticleEditorForm({
             </p>
           </div>
         </div>
-        <ManageLoadingButton
-          type="submit"
-          form="article-editor-form"
-          isLoading={isSaving}
-          loadingLabel="Đang lưu..."
-        >
-          Lưu
-        </ManageLoadingButton>
+        <div className="flex flex-wrap items-center gap-2">
+          {previewHref ? (
+            <Button variant="outline" asChild disabled={isSaving}>
+              <a href={previewHref} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-4 w-4" />
+                Xem trước
+              </a>
+            </Button>
+          ) : null}
+          <ManageLoadingButton
+            type="submit"
+            form="article-editor-form"
+            isLoading={isSaving}
+            loadingLabel="Đang lưu..."
+          >
+            Lưu
+          </ManageLoadingButton>
+        </div>
       </div>
 
       <FormProvider {...form}>

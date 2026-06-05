@@ -233,3 +233,28 @@
 .article-prose a:hover {
   opacity: 0.85;
 }
+
+/* 404 page floating blobs */
+@keyframes not-found-float {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-18px) scale(1.04);
+  }
+}
+
+.not-found-blob {
+  animation: not-found-float 7s ease-in-out infinite;
+}
+
+.not-found-blob-2 {
+  animation-delay: -2.5s;
+  animation-duration: 9s;
+}
+
+.not-found-blob-3 {
+  animation-delay: -4s;
+  animation-duration: 6s;
+}

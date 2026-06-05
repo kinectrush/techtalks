@@ -40,6 +40,7 @@
     "views": "lượt xem",
     "comingSoon": "Nội dung đang được cập nhật",
     "contentEmpty": "Bài viết chưa có nội dung chi tiết.",
+    "draftPreviewBanner": "Chế độ xem trước — bài viết này chưa hiển thị công khai.",
     "detailBannerTitle": "Banner quảng cáo",
     "detailBannerClose": "Đóng banner",
     "detailBannerOpenLink": "Mở liên kết banner",
@@ -99,6 +100,14 @@
   "Products": {
     "title": "Sản phẩm",
     "empty": "Không có sản phẩm"
+  },
+  "NotFound": {
+    "title": "Ối! Trang này đã \"bay\" mất rồi",
+    "subtitle": "Có vẻ như đường dẫn bạn tìm không tồn tại — hoặc đã được nâng cấp lên phiên bản mới hơn rồi.",
+    "hint": "Đừng lo, TechTalks vẫn còn rất nhiều thứ thú vị để khám phá!",
+    "ctaHome": "Về trang chủ",
+    "ctaReviews": "Đọc bài viết",
+    "errorCode": "404"
   },
   "Validation": {
     "emailRequired": "Email là bắt buộc",
