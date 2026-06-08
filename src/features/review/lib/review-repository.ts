@@ -120,6 +120,7 @@ export function getHomePageData(): HomePageData {
     trending7d,
     latest,
     categories: getMockCategories(),
+    featuredSubcategories: [],
   };
 }
 

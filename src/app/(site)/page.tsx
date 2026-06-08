@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { getActiveAdBannersCached } from '@/features/ad-banners/actions';
 import { AdBannerSlot } from '@/features/ad-banners/components/ad-banner-slot';
 import { getHomePageDataCached } from '@/features/review/actions';
+import { FeaturedSubcategorySection } from '@/features/review/components/featured-subcategory-section';
 import { HomeEmptyState } from '@/features/review/components/home-empty-state';
 import { HeroBanner } from '@/features/review/components/hero-banner';
 import { LatestPostsSection } from '@/features/review/components/latest-posts-section';
@@ -58,6 +59,7 @@ export default async function HomePage() {
   ]);
 
   const hasArticles = Boolean(data.hero);
+  const hasFeatured = data.featuredSubcategories.length > 0;
   const homeMobileBanner = adBanners.home_mobile;
   const homeDesktopBanner = adBanners.home_desktop;
 
@@ -73,28 +75,43 @@ export default async function HomePage() {
           />
         </div>
       ) : null}
-      {hasArticles ? (
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-10">
-          <div className="space-y-10 lg:col-span-8">
-            {data.hero ? (
-              <HeroBanner article={data.hero} locale={locale} />
-            ) : null}
-            <TrendingSection articles={data.trending24h} locale={locale} />
-            <LatestPostsSection articles={data.latest} locale={locale} />
-          </div>
-
-          <div className="space-y-6 lg:col-span-4">
-            <TrendingSidebar articles={data.trending7d} locale={locale} />
-            {homeDesktopBanner ? (
-              <div className="hidden lg:block">
-                <AdBannerSlot
-                  imageUrl={homeDesktopBanner.imageUrl}
-                  linkUrl={homeDesktopBanner.linkUrl}
-                  aspectRatio="9/16"
+      {hasFeatured || hasArticles ? (
+        <div className="space-y-10">
+          {hasFeatured ? (
+            <div className="space-y-8">
+              {data.featuredSubcategories.map((featured) => (
+                <FeaturedSubcategorySection
+                  key={featured.slug}
+                  featured={featured}
                 />
+              ))}
+            </div>
+          ) : null}
+
+          {hasArticles ? (
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-10">
+              <div className="space-y-10 lg:col-span-8">
+                {data.hero ? (
+                  <HeroBanner article={data.hero} locale={locale} />
+                ) : null}
+                <TrendingSection articles={data.trending24h} locale={locale} />
+                <LatestPostsSection articles={data.latest} locale={locale} />
               </div>
-            ) : null}
-          </div>
+
+              <div className="space-y-6 lg:col-span-4">
+                <TrendingSidebar articles={data.trending7d} locale={locale} />
+                {homeDesktopBanner ? (
+                  <div className="hidden lg:block">
+                    <AdBannerSlot
+                      imageUrl={homeDesktopBanner.imageUrl}
+                      linkUrl={homeDesktopBanner.linkUrl}
+                      aspectRatio="9/16"
+                    />
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : (
         <HomeEmptyState />

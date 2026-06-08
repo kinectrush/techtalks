@@ -7,6 +7,7 @@ import {
   createAdminCategory,
   listAdminCategories,
   setAdminCategoryActive,
+  setAdminCategoryHomepageFeatured,
   updateAdminCategory,
 } from '@/features/manage/categories/repository';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
@@ -47,6 +48,16 @@ export async function toggleCategoryActiveAction(
 ) {
   const supabase = await guard();
   await setAdminCategoryActive(supabase, id, isActive);
+  revalidatePath('/manage/admin/categories');
+  revalidatePath('/', 'layout');
+}
+
+export async function toggleCategoryHomepageFeaturedAction(
+  id: string,
+  showOnHomepage: boolean,
+) {
+  const supabase = await guard();
+  await setAdminCategoryHomepageFeatured(supabase, id, showOnHomepage);
   revalidatePath('/manage/admin/categories');
   revalidatePath('/', 'layout');
 }

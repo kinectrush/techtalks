@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { getActiveAdBannersCached } from '@/features/ad-banners/actions';
 import { AdBannerSlot } from '@/features/ad-banners/components/ad-banner-slot';
 import {
+  getCategoryLabelCached,
   getPublicCategoriesAction,
   getReviewsListPaginatedCached,
   searchReviewsPaginatedCached,
@@ -98,11 +99,8 @@ export async function generateMetadata({
 
   let heading = reviewT('allReviews');
   if (categorySlug) {
-    const categories = filterPublicCategories(
-      await getPublicCategoriesAction(),
-    );
-    const match = categories.find((c) => c.slug === categorySlug);
-    if (match) heading = match.name;
+    const label = await getCategoryLabelCached(categorySlug);
+    if (label) heading = label.name;
   }
 
   const pageTitle = `${heading} | ${siteT('siteName')}`;
@@ -140,11 +138,13 @@ export default async function ReviewsPage({
 
   const searchQuery = normalizeSearchQuery(rawQuery ?? '') ?? undefined;
 
-  const [listResult, categories, t, adBanners] = await Promise.all([
+  const [listResult, categories, categoryLabel, t, adBanners] =
+    await Promise.all([
     searchQuery
       ? searchReviewsPaginatedCached(searchQuery, categorySlug, 1)
       : getReviewsListPaginatedCached(categorySlug, 1),
     getPublicCategoriesAction(),
+    categorySlug ? getCategoryLabelCached(categorySlug) : Promise.resolve(null),
     getTranslations('Review'),
     getActiveAdBannersCached(),
   ]);
@@ -155,9 +155,11 @@ export default async function ReviewsPage({
 
   const publicCategories = filterPublicCategories(categories);
 
-  const activeCategory = categorySlug
-    ? publicCategories.find((c) => c.slug === categorySlug)
-    : undefined;
+  const activeCategory = categoryLabel
+    ? { slug: categoryLabel.slug, name: categoryLabel.name }
+    : categorySlug
+      ? publicCategories.find((c) => c.slug === categorySlug)
+      : undefined;
 
   const pageTitle = searchQuery
     ? t('searchResultsFor', { query: searchQuery })

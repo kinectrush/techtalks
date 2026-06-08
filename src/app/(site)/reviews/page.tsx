@@ -5,6 +5,7 @@ import { getActiveAdBannersCached } from '@/features/ad-banners/actions';
 import { AdBannerSlot } from '@/features/ad-banners/components/ad-banner-slot';
 import { ReviewsCategoryFilter } from '@/features/review/components/reviews-category-filter';
 import {
+  getCategoryLabelCached,
   getPublicCategoriesAction,
   getReviewsListPaginatedCached,
   searchReviewsPaginatedCached,
@@ -123,11 +124,13 @@ export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
   const { category: categorySlug, q: rawQuery } = await searchParams;
   const searchQuery = normalizeSearchQuery(rawQuery ?? '') ?? undefined;
 
-  const [listResult, categories, t, adBanners] = await Promise.all([
+  const [listResult, categories, categoryLabel, t, adBanners] =
+    await Promise.all([
     searchQuery
       ? searchReviewsPaginatedCached(searchQuery, categorySlug, 1)
       : getReviewsListPaginatedCached(categorySlug, 1),
     getPublicCategoriesAction(),
+    categorySlug ? getCategoryLabelCached(categorySlug) : Promise.resolve(null),
     getTranslations('Review'),
     getActiveAdBannersCached(),
   ]);
@@ -137,9 +140,11 @@ export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
   const reviewsBanner = adBanners.reviews;
 
   const publicCategories = filterPublicCategories(categories);
-  const activeCategory = categorySlug
-    ? publicCategories.find((c) => c.slug === categorySlug)
-    : undefined;
+  const activeCategory = categoryLabel
+    ? { slug: categoryLabel.slug, name: categoryLabel.name }
+    : categorySlug
+      ? publicCategories.find((c) => c.slug === categorySlug)
+      : undefined;
 
   const pageTitle = searchQuery
     ? t('searchResultsFor', { query: searchQuery })

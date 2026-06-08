@@ -99,10 +99,24 @@ export type ReviewSearchResult = Pick<
   'id' | 'slug' | 'title' | 'excerpt' | 'category' | 'coverImage'
 >;
 
+import type { SubcategoryHomepageConfig } from '@/types/world-cup';
+
+export type FeaturedSubcategory = {
+  slug: string;
+  name: string;
+  tagline: string | null;
+  accentColor: string | null;
+  parentSlug: string;
+  parentName: string;
+  articles: ReviewSummary[];
+  homepageConfig: SubcategoryHomepageConfig;
+};
+
 export type HomePageData = {
   hero: ReviewSummary | null;
   trending24h: ReviewSummary[];
   trending7d: ReviewSummary[];
   latest: ReviewSummary[];
   categories: ReviewCategory[];
+  featuredSubcategories: FeaturedSubcategory[];
 };

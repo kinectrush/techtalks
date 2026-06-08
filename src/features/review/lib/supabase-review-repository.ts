@@ -5,9 +5,11 @@ import {
   EXCLUDED_PUBLIC_CATEGORY_SLUGS,
   filterPublicCategories,
 } from '@/lib/category/constants';
+import { parseHomepageConfig } from '@/lib/world-cup/homepage-config';
 import { REVIEWS_PAGE_SIZE } from '@/lib/reviews/constants';
 import type { PaginatedResponse } from '@/types/api';
 import type {
+  FeaturedSubcategory,
   HomePageData,
   ReviewArticle,
   ReviewCategory,
@@ -177,10 +179,10 @@ export type SearchPublishedArticlesPaginatedOptions = {
   pageSize?: number;
 };
 
-async function resolveCategoryId(
+async function resolveCategoryFilterIds(
   supabase: SupabaseClient,
   categorySlug?: string,
-): Promise<string | null | 'excluded'> {
+): Promise<string[] | null | 'excluded'> {
   if (!categorySlug) return null;
 
   if (
@@ -193,13 +195,42 @@ async function resolveCategoryId(
 
   const { data: category, error: categoryError } = await supabase
     .from('categories')
-    .select('id')
+    .select('id, parent_id')
     .eq('slug', categorySlug)
     .eq('is_active', true)
     .maybeSingle();
 
   if (categoryError) throw categoryError;
-  return category?.id ?? null;
+  if (!category) return null;
+
+  if (category.parent_id) {
+    return [category.id];
+  }
+
+  const { data: children, error: childrenError } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('parent_id', category.id)
+    .eq('is_active', true);
+
+  if (childrenError) {
+    if (isMissingColumnError(childrenError as PostgrestErrorLike)) {
+      return [category.id];
+    }
+    throw childrenError;
+  }
+
+  const childIds = (children ?? []).map((row) => row.id);
+  return [category.id, ...childIds];
+}
+
+function applyCategoryFilter<T extends { eq: (col: string, val: string) => T; in: (col: string, vals: string[]) => T }>(
+  query: T,
+  categoryIds: string[] | null,
+): T {
+  if (!categoryIds?.length) return query;
+  if (categoryIds.length === 1) return query.eq('category_id', categoryIds[0]!);
+  return query.in('category_id', categoryIds);
 }
 
 export async function fetchPublishedArticles(
@@ -215,16 +246,16 @@ export async function fetchPublishedArticles(
       .order('published_at', { ascending: false });
   }
 
-  const categoryResolved = await resolveCategoryId(
+  const categoryResolved = await resolveCategoryFilterIds(
     supabase,
     options?.categorySlug,
   );
   if (categoryResolved === 'excluded') return [];
-  const categoryId = categoryResolved;
+  const categoryIds = categoryResolved;
 
   const run = async (select: string) => {
     let q = build(select);
-    if (categoryId) q = q.eq('category_id', categoryId);
+    q = applyCategoryFilter(q, categoryIds);
     return await q;
   };
 
@@ -259,18 +290,18 @@ export async function fetchPublishedArticlesPaginated(
       .order('published_at', { ascending: false });
   }
 
-  const categoryResolved = await resolveCategoryId(
+  const categoryResolved = await resolveCategoryFilterIds(
     supabase,
     options?.categorySlug,
   );
   if (categoryResolved === 'excluded') {
     return { data: [], total: 0, page: 1, pageSize };
   }
-  const categoryId = categoryResolved;
+  const categoryIds = categoryResolved;
 
   const run = async (select: string) => {
     let q = build(select).range(from, to);
-    if (categoryId) q = q.eq('category_id', categoryId);
+    q = applyCategoryFilter(q, categoryIds);
     return await q;
   };
 
@@ -306,12 +337,12 @@ export async function searchPublishedArticles(
   options?: SearchPublishedArticlesOptions,
 ): Promise<ReviewArticle[]> {
   const limit = options?.limit ?? 20;
-  const categoryResolved = await resolveCategoryId(
+  const categoryResolved = await resolveCategoryFilterIds(
     supabase,
     options?.categorySlug,
   );
   if (categoryResolved === 'excluded') return [];
-  const categoryId = categoryResolved;
+  const categoryIds = categoryResolved;
 
   const runFts = (select: string) => {
     let q = supabase
@@ -325,7 +356,7 @@ export async function searchPublishedArticles(
       })
       .order('published_at', { ascending: false })
       .limit(limit);
-    if (categoryId) q = q.eq('category_id', categoryId);
+    q = applyCategoryFilter(q, categoryIds);
     return q;
   };
 
@@ -341,7 +372,7 @@ export async function searchPublishedArticles(
       )
       .order('published_at', { ascending: false })
       .limit(limit);
-    if (categoryId) q = q.eq('category_id', categoryId);
+    q = applyCategoryFilter(q, categoryIds);
     return q;
   };
 
@@ -374,14 +405,14 @@ export async function searchPublishedArticlesPaginated(
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
-  const categoryResolved = await resolveCategoryId(
+  const categoryResolved = await resolveCategoryFilterIds(
     supabase,
     options?.categorySlug,
   );
   if (categoryResolved === 'excluded') {
     return { data: [], total: 0, page: 1, pageSize };
   }
-  const categoryId = categoryResolved;
+  const categoryIds = categoryResolved;
 
   const runFts = (select: string) => {
     let q = supabase
@@ -395,7 +426,7 @@ export async function searchPublishedArticlesPaginated(
       })
       .order('published_at', { ascending: false })
       .range(from, to);
-    if (categoryId) q = q.eq('category_id', categoryId);
+    q = applyCategoryFilter(q, categoryIds);
     return q;
   };
 
@@ -411,7 +442,7 @@ export async function searchPublishedArticlesPaginated(
       )
       .order('published_at', { ascending: false })
       .range(from, to);
-    if (categoryId) q = q.eq('category_id', categoryId);
+    q = applyCategoryFilter(q, categoryIds);
     return q;
   };
 
@@ -511,10 +542,159 @@ export async function fetchActiveCategories(
     .from('categories')
     .select('slug, name')
     .eq('is_active', true)
+    .is('parent_id', null)
     .order('sort_order', { ascending: true });
+
+  if (isMissingColumnError(error as PostgrestErrorLike)) {
+    const legacy = await supabase
+      .from('categories')
+      .select('slug, name')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
+    if (legacy.error) throw legacy.error;
+    return filterPublicCategories((legacy.data ?? []) as ReviewCategory[]);
+  }
 
   if (error) throw error;
   return filterPublicCategories((data ?? []) as ReviewCategory[]);
+}
+
+type FeaturedSubcategoryRow = {
+  id: string;
+  slug: string;
+  name: string;
+  parent_id: string;
+  homepage_tagline: string | null;
+  homepage_accent_color: string | null;
+  homepage_config: unknown | null;
+};
+
+const FEATURED_ARTICLE_LIMIT = 6;
+
+async function fetchHomepageFeaturedSubcategories(
+  supabase: SupabaseClient,
+): Promise<FeaturedSubcategory[]> {
+  const { data, error } = await supabase
+    .from('categories')
+    .select(
+      'id, slug, name, parent_id, homepage_tagline, homepage_accent_color, homepage_config',
+    )
+    .eq('is_active', true)
+    .eq('show_on_homepage', true)
+    .not('parent_id', 'is', null)
+    .order('sort_order', { ascending: true });
+
+  if (isMissingColumnError(error as PostgrestErrorLike)) {
+    const legacy = await supabase
+      .from('categories')
+      .select(
+        'id, slug, name, parent_id, homepage_tagline, homepage_accent_color',
+      )
+      .eq('is_active', true)
+      .eq('show_on_homepage', true)
+      .not('parent_id', 'is', null)
+      .order('sort_order', { ascending: true });
+    if (legacy.error) return [];
+    if (!legacy.data?.length) return [];
+
+    const legacyRows = legacy.data as Omit<FeaturedSubcategoryRow, 'homepage_config'>[];
+    return buildFeaturedSubcategories(supabase, legacyRows, () =>
+      parseHomepageConfig(null),
+    );
+  }
+  if (error) throw error;
+  if (!data?.length) return [];
+
+  const rows = data as FeaturedSubcategoryRow[];
+  return buildFeaturedSubcategories(supabase, rows, (row) =>
+    parseHomepageConfig(row.homepage_config),
+  );
+}
+
+async function buildFeaturedSubcategories(
+  supabase: SupabaseClient,
+  rows: Array<
+    Omit<FeaturedSubcategoryRow, 'homepage_config'> & {
+      homepage_config?: unknown | null;
+    }
+  >,
+  resolveConfig: (
+    row: Omit<FeaturedSubcategoryRow, 'homepage_config'> & {
+      homepage_config?: unknown | null;
+    },
+  ) => ReturnType<typeof parseHomepageConfig>,
+): Promise<FeaturedSubcategory[]> {
+  const parentIds = [...new Set(rows.map((row) => row.parent_id))];
+  const { data: parents, error: parentsError } = await supabase
+    .from('categories')
+    .select('id, slug, name')
+    .in('id', parentIds);
+
+  if (parentsError) throw parentsError;
+  const parentById = new Map(
+    (parents ?? []).map((parent) => [parent.id, parent]),
+  );
+
+  const featured: FeaturedSubcategory[] = [];
+
+  for (const row of rows) {
+    const parent = parentById.get(row.parent_id);
+    if (!parent) continue;
+
+    const { data: articles, error: articlesError } = await supabase
+      .from('review_articles')
+      .select(ARTICLE_SELECT)
+      .eq('status', 'published')
+      .eq('is_active', true)
+      .eq('category_id', row.id)
+      .order('published_at', { ascending: false })
+      .limit(FEATURED_ARTICLE_LIMIT);
+
+    if (articlesError) {
+      if (isMissingColumnError(articlesError as PostgrestErrorLike)) continue;
+      throw articlesError;
+    }
+
+    const mapped = ((articles ?? []) as unknown as ArticleRow[])
+      .map(mapRow)
+      .filter((article): article is ReviewArticle => article != null);
+
+    featured.push({
+      slug: row.slug,
+      name: row.name,
+      tagline: row.homepage_tagline,
+      accentColor: row.homepage_accent_color,
+      parentSlug: parent.slug,
+      parentName: parent.name,
+      articles: enrichSummaries(mapped),
+      homepageConfig: resolveConfig(row),
+    });
+  }
+
+  return featured;
+}
+
+export async function fetchCategoryLabelBySlug(
+  supabase: SupabaseClient,
+  slug: string,
+): Promise<{ slug: string; name: string } | null> {
+  if (
+    EXCLUDED_PUBLIC_CATEGORY_SLUGS.includes(
+      slug as (typeof EXCLUDED_PUBLIC_CATEGORY_SLUGS)[number],
+    )
+  ) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from('categories')
+    .select('slug, name, is_active, parent_id')
+    .eq('slug', slug)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data?.is_active) return null;
+  return { slug: data.slug, name: data.name };
 }
 
 /** @deprecated Use fetchActiveCategories */
@@ -527,9 +707,10 @@ export async function fetchCategories(
 export async function getHomePageDataFromSupabase(
   supabase: SupabaseClient,
 ): Promise<HomePageData> {
-  const [articles, categories] = await Promise.all([
+  const [articles, categories, featuredSubcategories] = await Promise.all([
     fetchPublishedArticles(supabase),
     fetchActiveCategories(supabase),
+    fetchHomepageFeaturedSubcategories(supabase),
   ]);
 
   const summariesBase = enrichSummaries(articles);
@@ -573,5 +754,6 @@ export async function getHomePageDataFromSupabase(
     trending7d,
     latest,
     categories,
+    featuredSubcategories,
   };
 }

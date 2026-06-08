@@ -17,6 +17,11 @@ export type AdminCategory = {
   sortOrder: number;
   isActive: boolean;
   showInMenu: boolean;
+  parentId: string | null;
+  parentName: string | null;
+  showOnHomepage: boolean;
+  homepageTagline: string | null;
+  homepageAccentColor: string | null;
   createdAt: string;
 };
 
@@ -28,6 +33,10 @@ export type AdminCategoryInput = {
   sortOrder: number;
   isActive: boolean;
   showInMenu: boolean;
+  parentId?: string | null;
+  showOnHomepage?: boolean;
+  homepageTagline?: string | null;
+  homepageAccentColor?: string | null;
 };
 
 export type AdminArticleRow = {

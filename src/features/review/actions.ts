@@ -10,6 +10,16 @@ import {
   normalizeSearchQuery,
 } from '@/lib/search/normalize-query';
 import type { PaginatedResponse } from '@/types/api';
+import type { FeaturedMatchTicker } from '@/types/world-cup';
+import {
+  enrichHomePageWithWorldCupData,
+  resolveFeaturedMatchTicker,
+} from '@/lib/world-cup/enrich-with-live-data';
+
+import {
+  getHomePageData,
+  sortByTrending,
+} from './lib/review-repository';
 import type {
   HomePageData,
   ReviewCategory,
@@ -17,13 +27,9 @@ import type {
   ReviewSummary,
   TrendingWindow,
 } from '@/types/review';
-
-import {
-  getHomePageData,
-  sortByTrending,
-} from './lib/review-repository';
 import {
   resolveArticleBySlug,
+  resolveCategoryLabel,
   resolvePublicCategories,
   resolvePublishedArticles,
   resolvePublishedArticlesPaginated,
@@ -33,19 +39,43 @@ import {
 import { getHomePageDataFromSupabase } from './lib/supabase-review-repository';
 
 async function resolveHomePageData(): Promise<HomePageData> {
+  let data: HomePageData;
   if (isSupabaseConfigured()) {
     const supabase = createSupabasePublicClientIfConfigured();
     if (supabase) {
-      return await getHomePageDataFromSupabase(supabase);
+      data = await getHomePageDataFromSupabase(supabase);
+    } else {
+      data = getHomePageData();
     }
+  } else {
+    data = getHomePageData();
   }
-  return getHomePageData();
+  return enrichHomePageWithWorldCupData(data);
 }
 
 export const getHomePageDataCached = unstable_cache(
   async (): Promise<HomePageData> => resolveHomePageData(),
-  ['review-home-v2-db'],
-  { revalidate: 120, tags: ['reviews', 'trending'] },
+  ['review-home-v6-football-data'],
+  { revalidate: 120, tags: ['reviews', 'trending', 'world-cup'] },
+);
+
+export const getFeaturedMatchTickerCached = unstable_cache(
+  async (): Promise<FeaturedMatchTicker> => {
+    const data = await resolveHomePageData();
+    return resolveFeaturedMatchTicker(data);
+  },
+  ['featured-match-ticker-v3-football-data'],
+  { revalidate: 120, tags: ['reviews', 'trending', 'world-cup'] },
+);
+
+export async function getCategoryLabelAction(slug: string) {
+  return resolveCategoryLabel(slug);
+}
+
+export const getCategoryLabelCached = unstable_cache(
+  async (slug: string) => resolveCategoryLabel(slug),
+  ['review-category-label'],
+  { revalidate: 120, tags: ['reviews'] },
 );
 
 export async function getTrendingAction(

@@ -22,6 +22,7 @@ import {
 } from './review-repository';
 import {
   fetchActiveCategories,
+  fetchCategoryLabelBySlug,
   fetchDraftPreviewArticleBySlug,
   fetchPublishedArticleBySlug,
   fetchPublishedArticles,
@@ -52,6 +53,21 @@ export async function resolvePublicCategories(): Promise<ReviewCategory[]> {
     }
   }
   return getMockCategories();
+}
+
+export async function resolveCategoryLabel(
+  slug: string,
+): Promise<{ slug: string; name: string } | null> {
+  if (isSupabaseConfigured()) {
+    const supabase = createSupabasePublicClientIfConfigured();
+    if (supabase) {
+      return fetchCategoryLabelBySlug(supabase, slug);
+    }
+  }
+
+  const categories = getMockCategories();
+  const match = categories.find((category) => category.slug === slug);
+  return match ? { slug: match.slug, name: match.name } : null;
 }
 
 export async function resolveSearchArticles(

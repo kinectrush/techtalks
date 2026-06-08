@@ -355,10 +355,45 @@ export async function setAdminArticleActive(
 export async function listCategories(supabase: SupabaseClient) {
   const { data, error } = await supabase
     .from('categories')
-    .select('id, slug, name')
+    .select('id, slug, name, parent_id')
     .order('sort_order', { ascending: true });
+
+  if (error?.code === '42703') {
+    const legacy = await supabase
+      .from('categories')
+      .select('id, slug, name')
+      .order('sort_order', { ascending: true });
+    if (legacy.error) throw legacy.error;
+    return (legacy.data ?? []).map((row) => ({
+      id: row.id,
+      name: row.name,
+    }));
+  }
+
   if (error) throw error;
-  return data ?? [];
+
+  const rows = data ?? [];
+  const parentIds = [
+    ...new Set(rows.map((row) => row.parent_id).filter(Boolean)),
+  ] as string[];
+
+  let parentNames = new Map<string, string>();
+  if (parentIds.length) {
+    const { data: parents, error: parentsError } = await supabase
+      .from('categories')
+      .select('id, name')
+      .in('id', parentIds);
+    if (parentsError) throw parentsError;
+    parentNames = new Map((parents ?? []).map((p) => [p.id, p.name]));
+  }
+
+  return rows.map((row) => {
+    const parentName = row.parent_id
+      ? parentNames.get(row.parent_id)
+      : undefined;
+    const label = parentName ? `${parentName} › ${row.name}` : row.name;
+    return { id: row.id, name: label };
+  });
 }
 
 export async function listAuthors(supabase: SupabaseClient) {

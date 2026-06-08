@@ -311,3 +311,44 @@
   animation-delay: -4s;
   animation-duration: 6s;
 }
+
+@keyframes world-cup-ticker {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.world-cup-ticker-viewport {
+  width: 100%;
+}
+
+.world-cup-ticker-track {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  width: max-content;
+  animation: world-cup-ticker var(--world-cup-ticker-duration, 80s) linear infinite;
+  will-change: transform;
+}
+
+.world-cup-ticker-track:hover {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .world-cup-ticker-viewport {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .world-cup-ticker-track {
+    animation: none !important;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    width: max-content;
+  }
+}

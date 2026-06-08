@@ -28,6 +28,9 @@ Chạy **theo thứ tự** trong [SQL Editor](https://supabase.com/dashboard/pro
 7. `supabase/migrations/20250605000000_review_detail_popup_banner_placement.sql`
 8. `supabase/migrations/20260602010000_review_engagement_counters.sql`
 9. `supabase/migrations/20260608000000_review_article_search.sql`
+10. `supabase/migrations/20260608100000_category_subcategories.sql`
+11. `supabase/migrations/20260608110000_category_parent_id_fkey.sql`
+12. `supabase/migrations/20260608120000_category_homepage_config.sql`
 
 Hoặc CLI:
 
