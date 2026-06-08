@@ -19,6 +19,26 @@ const WEIGHTS = {
 
 const GRAVITY = 1.35;
 
+/** Top trending 7d: rank by window views, not time-decay score. */
+export function compareTopTrending7d(
+  a: { engagement: ReviewEngagement; publishedAt: string },
+  b: { engagement: ReviewEngagement; publishedAt: string },
+): number {
+  const viewsDiff = b.engagement.views7d - a.engagement.views7d;
+  if (viewsDiff !== 0) return viewsDiff;
+
+  const reactionsDiff =
+    b.engagement.reactions7d - a.engagement.reactions7d;
+  if (reactionsDiff !== 0) return reactionsDiff;
+
+  const commentsDiff = b.engagement.comments7d - a.engagement.comments7d;
+  if (commentsDiff !== 0) return commentsDiff;
+
+  return (
+    new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+  );
+}
+
 export function getEngagementForWindow(
   engagement: ReviewEngagement,
   window: TrendingWindow,

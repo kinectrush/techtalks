@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { Button } from '@/components/ui/button';
+import { ArticleSearch } from '@/features/review/components/article-search';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 
@@ -101,6 +102,9 @@ export function MobileNavDialog() {
                 >
                   <X className="h-5 w-5" />
                 </Button>
+              </div>
+              <div className="shrink-0 border-b px-3 py-4">
+                <ArticleSearch variant="drawer" />
               </div>
               <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
                 {MOBILE_NAV_ITEMS.map((item) => (

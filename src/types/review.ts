@@ -93,6 +93,12 @@ export type ReviewSummary = ReviewArticle & {
 
 export type TrendingWindow = '24h' | '7d';
 
+/** Lightweight payload for search typeahead. */
+export type ReviewSearchResult = Pick<
+  ReviewSummary,
+  'id' | 'slug' | 'title' | 'excerpt' | 'category' | 'coverImage'
+>;
+
 export type HomePageData = {
   hero: ReviewSummary | null;
   trending24h: ReviewSummary[];

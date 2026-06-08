@@ -49,6 +49,16 @@
     "reviewsInCategory": "{name}",
     "unknownCategory": "Category not found.",
     "noReviews": "No articles in this category yet.",
+    "searchPlaceholder": "Search articles…",
+    "searchClear": "Clear search",
+    "searchLoading": "Searching…",
+    "searchResults": "Search results",
+    "searchResultsFor": "Results for \"{query}\"",
+    "searchViewAll": "View all results for \"{query}\"",
+    "noSearchResults": "No matching articles found.",
+    "loadMoreLoading": "Loading more articles…",
+    "loadMoreEnd": "You've reached the end",
+    "loadMoreError": "Couldn't load more articles. Please try again.",
     "homeEmpty": "No published articles yet. Publish and activate articles in the admin panel.",
     "categoryMeta": {
       "congNghe": {

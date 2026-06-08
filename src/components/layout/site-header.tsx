@@ -4,6 +4,7 @@ import { ContactMessageDialog } from '@/components/common/contact-message-dialog
 import { SiteLogo } from '@/components/common/site-logo';
 import { MobileNavDialog } from '@/components/layout/mobile-nav-dialog';
 import { getMenuCategories } from '@/features/category/queries';
+import { ArticleSearch } from '@/features/review/components/article-search';
 import { Link } from '@/i18n/navigation';
 
 export async function SiteHeader() {
@@ -36,6 +37,10 @@ export async function SiteHeader() {
             ))}
           </div>
         </nav>
+
+        <div className="hidden shrink-0 md:block md:w-full md:max-w-xs lg:max-w-sm">
+          <ArticleSearch />
+        </div>
 
         <div className="ml-auto flex shrink-0 items-center justify-end gap-2">
           <div className="hidden h-6 w-px bg-border md:block" />

@@ -53,7 +53,7 @@ export async function TrendingSidebar({
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {formatNumber(article.engagement.views7d, locale)}{' '}
-                  {t('views')} · {article.trendingScore7d.toFixed(1)} pts
+                  {t('views')}
                 </p>
               </div>
             </Link>

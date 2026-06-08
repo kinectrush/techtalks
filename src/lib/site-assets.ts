@@ -106,10 +106,14 @@ export function localePageUrl(locale: Locale, pathname = ''): string {
 export function reviewsListPageUrl(
   locale: Locale,
   categorySlug?: string,
+  query?: string,
 ): string {
   const url = new URL('/reviews', env.appUrl);
   if (categorySlug) {
     url.searchParams.set('category', categorySlug);
+  }
+  if (query?.trim()) {
+    url.searchParams.set('q', query.trim());
   }
   return url.href;
 }

@@ -4,7 +4,19 @@ import { unstable_cache } from 'next/cache';
 
 import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { createSupabasePublicClientIfConfigured } from '@/lib/supabase/public';
-import type { HomePageData, ReviewCategory, ReviewSummary, TrendingWindow } from '@/types/review';
+import { REVIEWS_PAGE_SIZE } from '@/lib/reviews/constants';
+import {
+  SEARCH_RESULTS_LIMIT,
+  normalizeSearchQuery,
+} from '@/lib/search/normalize-query';
+import type { PaginatedResponse } from '@/types/api';
+import type {
+  HomePageData,
+  ReviewCategory,
+  ReviewSearchResult,
+  ReviewSummary,
+  TrendingWindow,
+} from '@/types/review';
 
 import {
   getHomePageData,
@@ -14,6 +26,9 @@ import {
   resolveArticleBySlug,
   resolvePublicCategories,
   resolvePublishedArticles,
+  resolvePublishedArticlesPaginated,
+  resolveSearchArticles,
+  resolveSearchArticlesPaginated,
 } from './lib/resolve-published-reviews';
 import { getHomePageDataFromSupabase } from './lib/supabase-review-repository';
 
@@ -66,6 +81,82 @@ export async function getReviewsListAction(categorySlug?: string) {
   return resolvePublishedArticles(categorySlug);
 }
 
+export async function getReviewsListPaginatedAction(
+  options?: { categorySlug?: string; page?: number; pageSize?: number },
+): Promise<PaginatedResponse<ReviewSummary>> {
+  return resolvePublishedArticlesPaginated({
+    categorySlug: options?.categorySlug,
+    page: options?.page,
+    pageSize: options?.pageSize ?? REVIEWS_PAGE_SIZE,
+  });
+}
+
+function toSearchResult(article: ReviewSummary): ReviewSearchResult {
+  return {
+    id: article.id,
+    slug: article.slug,
+    title: article.title,
+    excerpt: article.excerpt,
+    category: article.category,
+    coverImage: article.coverImage,
+  };
+}
+
+export async function searchReviewsAction(
+  rawQuery: string,
+  options?: { categorySlug?: string; limit?: number },
+): Promise<ReviewSummary[]> {
+  const query = normalizeSearchQuery(rawQuery);
+  if (!query) return [];
+
+  const limit = Math.min(
+    options?.limit ?? SEARCH_RESULTS_LIMIT,
+    SEARCH_RESULTS_LIMIT,
+  );
+
+  return resolveSearchArticles(query, {
+    categorySlug: options?.categorySlug,
+    limit,
+  });
+}
+
+export async function searchReviewsPaginatedAction(
+  rawQuery: string,
+  options?: { categorySlug?: string; page?: number; pageSize?: number },
+): Promise<PaginatedResponse<ReviewSummary>> {
+  const query = normalizeSearchQuery(rawQuery);
+  if (!query) {
+    return { data: [], total: 0, page: 1, pageSize: REVIEWS_PAGE_SIZE };
+  }
+
+  return resolveSearchArticlesPaginated(query, {
+    categorySlug: options?.categorySlug,
+    page: options?.page,
+    pageSize: options?.pageSize ?? REVIEWS_PAGE_SIZE,
+  });
+}
+
+export async function searchReviewsForTypeaheadAction(
+  rawQuery: string,
+): Promise<ReviewSearchResult[]> {
+  const results = await searchReviewsAction(rawQuery, { limit: 8 });
+  return results.map(toSearchResult);
+}
+
+export const searchReviewsCached = unstable_cache(
+  async (rawQuery: string, categorySlug?: string) =>
+    searchReviewsAction(rawQuery, { categorySlug }),
+  ['review-search-v1-db'],
+  { revalidate: 60, tags: ['reviews'] },
+);
+
+export const searchReviewsPaginatedCached = unstable_cache(
+  async (rawQuery: string, categorySlug: string | undefined, page: number) =>
+    searchReviewsPaginatedAction(rawQuery, { categorySlug, page }),
+  ['review-search-paginated-v1-db'],
+  { revalidate: 60, tags: ['reviews'] },
+);
+
 export async function getPublicCategoriesAction(): Promise<ReviewCategory[]> {
   return resolvePublicCategories();
 }
@@ -73,6 +164,13 @@ export async function getPublicCategoriesAction(): Promise<ReviewCategory[]> {
 export const getReviewsListCached = unstable_cache(
   async (categorySlug?: string) => resolvePublishedArticles(categorySlug),
   ['review-list-v2-db'],
+  { revalidate: 120, tags: ['reviews'] },
+);
+
+export const getReviewsListPaginatedCached = unstable_cache(
+  async (categorySlug: string | undefined, page: number) =>
+    getReviewsListPaginatedAction({ categorySlug, page }),
+  ['review-list-paginated-v1-db'],
   { revalidate: 120, tags: ['reviews'] },
 );
 

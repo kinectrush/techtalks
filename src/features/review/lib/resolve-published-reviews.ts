@@ -1,6 +1,8 @@
 import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { createSupabasePublicClientIfConfigured } from '@/lib/supabase/public';
+import { REVIEWS_PAGE_SIZE } from '@/lib/reviews/constants';
+import type { PaginatedResponse } from '@/types/api';
 import type {
   ReviewArticle,
   ReviewCategory,
@@ -13,13 +15,19 @@ import {
   articleToSummary,
   enrichSummaries,
   getAllSummaries,
+  getAllSummariesPaginated,
   getArticleBySlug,
+  searchSummaries,
+  searchSummariesPaginated,
 } from './review-repository';
 import {
   fetchActiveCategories,
   fetchDraftPreviewArticleBySlug,
   fetchPublishedArticleBySlug,
   fetchPublishedArticles,
+  fetchPublishedArticlesPaginated,
+  searchPublishedArticles,
+  searchPublishedArticlesPaginated,
 } from './supabase-review-repository';
 
 export type ResolveArticleOptions = {
@@ -46,6 +54,41 @@ export async function resolvePublicCategories(): Promise<ReviewCategory[]> {
   return getMockCategories();
 }
 
+export async function resolveSearchArticles(
+  query: string,
+  options?: { categorySlug?: string; limit?: number },
+): Promise<ReviewSummary[]> {
+  if (isSupabaseConfigured()) {
+    const supabase = createSupabasePublicClientIfConfigured();
+    if (supabase) {
+      const articles = await searchPublishedArticles(supabase, query, options);
+      return enrichSummaries(articles);
+    }
+  }
+  return searchSummaries(query, options);
+}
+
+export async function resolveSearchArticlesPaginated(
+  query: string,
+  options?: { categorySlug?: string; page?: number; pageSize?: number },
+): Promise<PaginatedResponse<ReviewSummary>> {
+  if (isSupabaseConfigured()) {
+    const supabase = createSupabasePublicClientIfConfigured();
+    if (supabase) {
+      const result = await searchPublishedArticlesPaginated(
+        supabase,
+        query,
+        options,
+      );
+      return {
+        ...result,
+        data: enrichSummaries(result.data),
+      };
+    }
+  }
+  return searchSummariesPaginated(query, options);
+}
+
 export async function resolvePublishedArticles(
   categorySlug?: string,
 ): Promise<ReviewSummary[]> {
@@ -58,6 +101,32 @@ export async function resolvePublishedArticles(
     }
   }
   return getAllSummaries(categorySlug);
+}
+
+export async function resolvePublishedArticlesPaginated(
+  options?: { categorySlug?: string; page?: number; pageSize?: number },
+): Promise<PaginatedResponse<ReviewSummary>> {
+  const pageSize = options?.pageSize ?? REVIEWS_PAGE_SIZE;
+
+  if (isSupabaseConfigured()) {
+    const supabase = createSupabasePublicClientIfConfigured();
+    if (supabase) {
+      const result = await fetchPublishedArticlesPaginated(supabase, {
+        categorySlug: options?.categorySlug,
+        page: options?.page,
+        pageSize,
+      });
+      return {
+        ...result,
+        data: enrichSummaries(result.data),
+      };
+    }
+  }
+  return getAllSummariesPaginated({
+    categorySlug: options?.categorySlug,
+    page: options?.page,
+    pageSize,
+  });
 }
 
 export async function resolveArticleBySlug(

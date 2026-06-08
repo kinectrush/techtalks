@@ -5,6 +5,8 @@ import {
   EXCLUDED_PUBLIC_CATEGORY_SLUGS,
   filterPublicCategories,
 } from '@/lib/category/constants';
+import { REVIEWS_PAGE_SIZE } from '@/lib/reviews/constants';
+import type { PaginatedResponse } from '@/types/api';
 import type {
   HomePageData,
   ReviewArticle,
@@ -12,7 +14,7 @@ import type {
   ReviewEngagement,
 } from '@/types/review';
 
-import { enrichSummaries } from './review-repository';
+import { enrichSummaries, sortByTrending } from './review-repository';
 
 type CategoryRow = { id: string; slug: string; name: string };
 type AuthorRow = { id: string; name: string; avatar_url: string | null };
@@ -158,6 +160,48 @@ export type FetchPublishedArticlesOptions = {
   categorySlug?: string;
 };
 
+export type FetchPublishedArticlesPaginatedOptions =
+  FetchPublishedArticlesOptions & {
+    page?: number;
+    pageSize?: number;
+  };
+
+export type SearchPublishedArticlesOptions = {
+  categorySlug?: string;
+  limit?: number;
+};
+
+export type SearchPublishedArticlesPaginatedOptions = {
+  categorySlug?: string;
+  page?: number;
+  pageSize?: number;
+};
+
+async function resolveCategoryId(
+  supabase: SupabaseClient,
+  categorySlug?: string,
+): Promise<string | null | 'excluded'> {
+  if (!categorySlug) return null;
+
+  if (
+    EXCLUDED_PUBLIC_CATEGORY_SLUGS.includes(
+      categorySlug as (typeof EXCLUDED_PUBLIC_CATEGORY_SLUGS)[number],
+    )
+  ) {
+    return 'excluded';
+  }
+
+  const { data: category, error: categoryError } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('slug', categorySlug)
+    .eq('is_active', true)
+    .maybeSingle();
+
+  if (categoryError) throw categoryError;
+  return category?.id ?? null;
+}
+
 export async function fetchPublishedArticles(
   supabase: SupabaseClient,
   options?: FetchPublishedArticlesOptions,
@@ -171,27 +215,12 @@ export async function fetchPublishedArticles(
       .order('published_at', { ascending: false });
   }
 
-  let categoryId: string | null = null;
-  if (options?.categorySlug) {
-    if (
-      EXCLUDED_PUBLIC_CATEGORY_SLUGS.includes(
-        options.categorySlug as (typeof EXCLUDED_PUBLIC_CATEGORY_SLUGS)[number],
-      )
-    ) {
-      return [];
-    }
-
-    const { data: category, error: categoryError } = await supabase
-      .from('categories')
-      .select('id')
-      .eq('slug', options.categorySlug)
-      .eq('is_active', true)
-      .maybeSingle();
-
-    if (categoryError) throw categoryError;
-    if (!category) return [];
-    categoryId = category.id;
-  }
+  const categoryResolved = await resolveCategoryId(
+    supabase,
+    options?.categorySlug,
+  );
+  if (categoryResolved === 'excluded') return [];
+  const categoryId = categoryResolved;
 
   const run = async (select: string) => {
     let q = build(select);
@@ -210,6 +239,213 @@ export async function fetchPublishedArticles(
   return ((data ?? []) as unknown as ArticleRow[])
     .map(mapRow)
     .filter((row): row is ReviewArticle => row != null);
+}
+
+export async function fetchPublishedArticlesPaginated(
+  supabase: SupabaseClient,
+  options?: FetchPublishedArticlesPaginatedOptions,
+): Promise<PaginatedResponse<ReviewArticle>> {
+  const page = Math.max(1, options?.page ?? 1);
+  const pageSize = Math.max(1, options?.pageSize ?? REVIEWS_PAGE_SIZE);
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  function build(select: string) {
+    return supabase
+      .from('review_articles')
+      .select(select, { count: 'exact' })
+      .eq('status', 'published')
+      .eq('is_active', true)
+      .order('published_at', { ascending: false });
+  }
+
+  const categoryResolved = await resolveCategoryId(
+    supabase,
+    options?.categorySlug,
+  );
+  if (categoryResolved === 'excluded') {
+    return { data: [], total: 0, page: 1, pageSize };
+  }
+  const categoryId = categoryResolved;
+
+  const run = async (select: string) => {
+    let q = build(select).range(from, to);
+    if (categoryId) q = q.eq('category_id', categoryId);
+    return await q;
+  };
+
+  let { data, error, count } = await run(ARTICLE_SELECT);
+  if (isMissingColumnError(error as PostgrestErrorLike)) {
+    const retry = await run(ARTICLE_SELECT_LEGACY);
+    data = retry.data;
+    error = retry.error;
+    count = retry.count;
+  }
+
+  if (error) throw error;
+
+  const articles = ((data ?? []) as unknown as ArticleRow[])
+    .map(mapRow)
+    .filter((row): row is ReviewArticle => row != null);
+
+  const total = count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const safePage = Math.min(page, totalPages);
+
+  return {
+    data: articles,
+    total,
+    page: total > 0 ? safePage : 1,
+    pageSize,
+  };
+}
+
+export async function searchPublishedArticles(
+  supabase: SupabaseClient,
+  query: string,
+  options?: SearchPublishedArticlesOptions,
+): Promise<ReviewArticle[]> {
+  const limit = options?.limit ?? 20;
+  const categoryResolved = await resolveCategoryId(
+    supabase,
+    options?.categorySlug,
+  );
+  if (categoryResolved === 'excluded') return [];
+  const categoryId = categoryResolved;
+
+  const runFts = (select: string) => {
+    let q = supabase
+      .from('review_articles')
+      .select(select)
+      .eq('status', 'published')
+      .eq('is_active', true)
+      .textSearch('search_vector', query, {
+        type: 'websearch',
+        config: 'simple',
+      })
+      .order('published_at', { ascending: false })
+      .limit(limit);
+    if (categoryId) q = q.eq('category_id', categoryId);
+    return q;
+  };
+
+  const runIlike = (select: string) => {
+    const term = query.replace(/[%_]/g, '');
+    let q = supabase
+      .from('review_articles')
+      .select(select)
+      .eq('status', 'published')
+      .eq('is_active', true)
+      .or(
+        `title.ilike.%${term}%,excerpt.ilike.%${term}%,slug.ilike.%${term}%`,
+      )
+      .order('published_at', { ascending: false })
+      .limit(limit);
+    if (categoryId) q = q.eq('category_id', categoryId);
+    return q;
+  };
+
+  let { data, error } = await runFts(ARTICLE_SELECT);
+  if (isMissingColumnError(error as PostgrestErrorLike)) {
+    const retry = await runIlike(ARTICLE_SELECT);
+    data = retry.data;
+    error = retry.error;
+  } else if (error) {
+    const retry = await runIlike(ARTICLE_SELECT);
+    if (!retry.error) {
+      data = retry.data;
+      error = null;
+    }
+  }
+
+  if (error) throw error;
+  return ((data ?? []) as unknown as ArticleRow[])
+    .map(mapRow)
+    .filter((row): row is ReviewArticle => row != null);
+}
+
+export async function searchPublishedArticlesPaginated(
+  supabase: SupabaseClient,
+  query: string,
+  options?: SearchPublishedArticlesPaginatedOptions,
+): Promise<PaginatedResponse<ReviewArticle>> {
+  const page = Math.max(1, options?.page ?? 1);
+  const pageSize = Math.max(1, options?.pageSize ?? REVIEWS_PAGE_SIZE);
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  const categoryResolved = await resolveCategoryId(
+    supabase,
+    options?.categorySlug,
+  );
+  if (categoryResolved === 'excluded') {
+    return { data: [], total: 0, page: 1, pageSize };
+  }
+  const categoryId = categoryResolved;
+
+  const runFts = (select: string) => {
+    let q = supabase
+      .from('review_articles')
+      .select(select, { count: 'exact' })
+      .eq('status', 'published')
+      .eq('is_active', true)
+      .textSearch('search_vector', query, {
+        type: 'websearch',
+        config: 'simple',
+      })
+      .order('published_at', { ascending: false })
+      .range(from, to);
+    if (categoryId) q = q.eq('category_id', categoryId);
+    return q;
+  };
+
+  const runIlike = (select: string) => {
+    const term = query.replace(/[%_]/g, '');
+    let q = supabase
+      .from('review_articles')
+      .select(select, { count: 'exact' })
+      .eq('status', 'published')
+      .eq('is_active', true)
+      .or(
+        `title.ilike.%${term}%,excerpt.ilike.%${term}%,slug.ilike.%${term}%`,
+      )
+      .order('published_at', { ascending: false })
+      .range(from, to);
+    if (categoryId) q = q.eq('category_id', categoryId);
+    return q;
+  };
+
+  let { data, error, count } = await runFts(ARTICLE_SELECT);
+  if (isMissingColumnError(error as PostgrestErrorLike)) {
+    const retry = await runIlike(ARTICLE_SELECT);
+    data = retry.data;
+    error = retry.error;
+    count = retry.count;
+  } else if (error) {
+    const retry = await runIlike(ARTICLE_SELECT);
+    if (!retry.error) {
+      data = retry.data;
+      error = null;
+      count = retry.count;
+    }
+  }
+
+  if (error) throw error;
+
+  const articles = ((data ?? []) as unknown as ArticleRow[])
+    .map(mapRow)
+    .filter((row): row is ReviewArticle => row != null);
+
+  const total = count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const safePage = Math.min(page, totalPages);
+
+  return {
+    data: articles,
+    total,
+    page: total > 0 ? safePage : 1,
+    pageSize,
+  };
 }
 
 async function fetchArticleRowBySlug(
@@ -322,12 +558,8 @@ export async function getHomePageDataFromSupabase(
   const hero =
     summaries.find((a) => a.isEditorPick) ?? summaries[0] ?? null;
 
-  const trending24h = [...summaries]
-    .sort((a, b) => b.trendingScore24h - a.trendingScore24h)
-    .slice(0, 10);
-  const trending7d = [...summaries]
-    .sort((a, b) => b.trendingScore7d - a.trendingScore7d)
-    .slice(0, 8);
+  const trending24h = sortByTrending(summaries, '24h', 10);
+  const trending7d = sortByTrending(summaries, '7d', 8);
   const latest = [...summaries]
     .sort(
       (a, b) =>

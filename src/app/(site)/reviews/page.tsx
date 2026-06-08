@@ -3,12 +3,14 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { getActiveAdBannersCached } from '@/features/ad-banners/actions';
 import { AdBannerSlot } from '@/features/ad-banners/components/ad-banner-slot';
-import { ReviewCard } from '@/features/review/components/review-card';
 import { ReviewsCategoryFilter } from '@/features/review/components/reviews-category-filter';
 import {
   getPublicCategoriesAction,
-  getReviewsListCached,
+  getReviewsListPaginatedCached,
+  searchReviewsPaginatedCached,
 } from '@/features/review/actions';
+import { ReviewsInfiniteList } from '@/features/review/components/reviews-infinite-list';
+import { normalizeSearchQuery } from '@/lib/search/normalize-query';
 import { filterPublicCategories } from '@/lib/category/constants';
 import {
   buildOpenGraphImages,
@@ -19,7 +21,7 @@ import {
 const locale = 'vi' as const;
 
 type ReviewsPageProps = {
-  searchParams: Promise<{ category?: string }>;
+  searchParams: Promise<{ category?: string; q?: string }>;
 };
 
 type CategorySeoCopy = {
@@ -118,14 +120,19 @@ export async function generateMetadata({
 
 export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
   setRequestLocale(locale);
-  const { category: categorySlug } = await searchParams;
+  const { category: categorySlug, q: rawQuery } = await searchParams;
+  const searchQuery = normalizeSearchQuery(rawQuery ?? '') ?? undefined;
 
-  const [articles, categories, t, adBanners] = await Promise.all([
-    getReviewsListCached(categorySlug),
+  const [listResult, categories, t, adBanners] = await Promise.all([
+    searchQuery
+      ? searchReviewsPaginatedCached(searchQuery, categorySlug, 1)
+      : getReviewsListPaginatedCached(categorySlug, 1),
     getPublicCategoriesAction(),
     getTranslations('Review'),
     getActiveAdBannersCached(),
   ]);
+
+  const articles = listResult.data;
 
   const reviewsBanner = adBanners.reviews;
 
@@ -134,7 +141,15 @@ export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
     ? publicCategories.find((c) => c.slug === categorySlug)
     : undefined;
 
-  const pageTitle = activeCategory ? activeCategory.name : t('allReviews');
+  const pageTitle = searchQuery
+    ? t('searchResultsFor', { query: searchQuery })
+    : activeCategory
+      ? activeCategory.name
+      : t('allReviews');
+
+  const emptyMessage = searchQuery
+    ? t('noSearchResults')
+    : t('noReviews');
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
@@ -153,25 +168,30 @@ export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
         <p className="mb-6 text-sm text-muted-foreground">{t('unknownCategory')}</p>
       ) : null}
 
-      <ReviewsCategoryFilter categories={publicCategories} activeSlug={categorySlug} />
+      {!searchQuery ? (
+        <ReviewsCategoryFilter categories={publicCategories} activeSlug={categorySlug} />
+      ) : null}
 
       {articles.length === 0 ? (
         <p className="rounded-lg border bg-muted/30 px-6 py-12 text-center text-muted-foreground">
-          {t('noReviews')}
+          {emptyMessage}
         </p>
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {articles.map((article) => (
-            <ReviewCard
-              key={article.id}
-              article={article}
-              locale={locale}
-              hotLabel={t('badgeHot')}
-              newLabel={t('badgeNew')}
-              trendingLabel={t('badgeTrending')}
-            />
-          ))}
-        </div>
+        <ReviewsInfiniteList
+          key={`${categorySlug ?? ''}-${searchQuery ?? ''}`}
+          initialItems={articles}
+          initialPage={listResult.page}
+          total={listResult.total}
+          pageSize={listResult.pageSize}
+          locale={locale}
+          categorySlug={categorySlug}
+          searchQuery={searchQuery}
+          labels={{
+            hotLabel: t('badgeHot'),
+            newLabel: t('badgeNew'),
+            trendingLabel: t('badgeTrending'),
+          }}
+        />
       )}
     </main>
   );

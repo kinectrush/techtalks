@@ -49,6 +49,16 @@
     "reviewsInCategory": "{name}",
     "unknownCategory": "Không tìm thấy danh mục này.",
     "noReviews": "Chưa có bài viết trong mục này.",
+    "searchPlaceholder": "Tìm bài viết…",
+    "searchClear": "Xóa từ khóa",
+    "searchLoading": "Đang tìm…",
+    "searchResults": "Kết quả tìm kiếm",
+    "searchResultsFor": "Kết quả cho \"{query}\"",
+    "searchViewAll": "Xem tất cả kết quả cho \"{query}\"",
+    "noSearchResults": "Không tìm thấy bài viết phù hợp.",
+    "loadMoreLoading": "Đang tải thêm bài viết…",
+    "loadMoreEnd": "Bạn đã xem hết danh sách",
+    "loadMoreError": "Không tải được thêm bài viết. Vui lòng thử lại.",
     "homeEmpty": "Chưa có bài viết công khai. Hãy bật và xuất bản bài viết trong trang quản trị.",
     "categoryMeta": {
       "congNghe": {

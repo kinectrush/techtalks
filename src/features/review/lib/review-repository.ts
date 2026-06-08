@@ -1,7 +1,10 @@
+import type { PaginatedResponse } from '@/types/api';
 import {
   calculateTrendingScore,
+  compareTopTrending7d,
   getHotBadge,
 } from '@/lib/trending/calculate-score';
+import { REVIEWS_PAGE_SIZE } from '@/lib/reviews/constants';
 import type {
   HomePageData,
   ReviewArticle,
@@ -75,14 +78,19 @@ export function sortByTrending(
   window: TrendingWindow,
   limit?: number,
 ) {
-  const key = window === '24h' ? 'trendingScore24h' : 'trendingScore7d';
-  const sorted = [...summaries].sort((a, b) => b[key] - a[key]);
+  const sorted =
+    window === '7d'
+      ? [...summaries].sort(compareTopTrending7d)
+      : [...summaries].sort(
+          (a, b) => b.trendingScore24h - a.trendingScore24h,
+        );
   const sliced = limit ? sorted.slice(0, limit) : sorted;
+  const scoreKey = window === '24h' ? 'trendingScore24h' : 'trendingScore7d';
 
   return sliced.map((item, index) => ({
     ...item,
     hotRank: index + 1,
-    hotBadge: getHotBadge(item[key], window),
+    hotBadge: getHotBadge(item[scoreKey], window),
   }));
 }
 
@@ -135,6 +143,71 @@ export function getAllSummaries(categorySlug?: string): ReviewSummary[] {
     articles = articles.filter((a) => a.category.slug === categorySlug);
   }
   return enrichSummaries(articles);
+}
+
+export function getAllSummariesPaginated(
+  options?: { categorySlug?: string; page?: number; pageSize?: number },
+): PaginatedResponse<ReviewSummary> {
+  const page = Math.max(1, options?.page ?? 1);
+  const pageSize = Math.max(1, options?.pageSize ?? REVIEWS_PAGE_SIZE);
+  const all = getAllSummaries(options?.categorySlug);
+  const total = all.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const from = (safePage - 1) * pageSize;
+
+  return {
+    data: all.slice(from, from + pageSize),
+    total,
+    page: safePage,
+    pageSize,
+  };
+}
+
+export function searchSummaries(
+  query: string,
+  options?: { categorySlug?: string; limit?: number },
+): ReviewSummary[] {
+  const term = query.trim().toLowerCase();
+  if (!term) return [];
+
+  let articles = publishedOnly(MOCK_ARTICLES).map(withMockContent);
+  if (options?.categorySlug === 'general') {
+    return [];
+  }
+  if (options?.categorySlug) {
+    articles = articles.filter((a) => a.category.slug === options.categorySlug);
+  }
+
+  const matched = articles.filter(
+    (article) =>
+      article.title.toLowerCase().includes(term) ||
+      article.excerpt.toLowerCase().includes(term) ||
+      article.slug.toLowerCase().includes(term),
+  );
+
+  const limit = options?.limit ?? 20;
+  return enrichSummaries(matched).slice(0, limit);
+}
+
+export function searchSummariesPaginated(
+  query: string,
+  options?: { categorySlug?: string; page?: number; pageSize?: number },
+): PaginatedResponse<ReviewSummary> {
+  const page = Math.max(1, options?.page ?? 1);
+  const pageSize = Math.max(1, options?.pageSize ?? REVIEWS_PAGE_SIZE);
+  const all = searchSummaries(query, { categorySlug: options?.categorySlug });
+  const total = all.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const from = (safePage - 1) * pageSize;
+
+  return {
+    data: all.slice(from, from + pageSize),
+    total,
+    page: safePage,
+    pageSize,
+  };
 }
 
 export function getMockCategories(): ReviewCategory[] {

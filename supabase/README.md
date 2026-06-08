@@ -26,6 +26,8 @@ Chạy **theo thứ tự** trong [SQL Editor](https://supabase.com/dashboard/pro
 5. `supabase/migrations/20250603000000_ad_banners.sql`
 6. `supabase/migrations/20250604000000_article_detail_ad_banners.sql`
 7. `supabase/migrations/20250605000000_review_detail_popup_banner_placement.sql`
+8. `supabase/migrations/20260602010000_review_engagement_counters.sql`
+9. `supabase/migrations/20260608000000_review_article_search.sql`
 
 Hoặc CLI:
 
