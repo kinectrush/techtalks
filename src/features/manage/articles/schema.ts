@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import type { ArticleDetailAdBanner } from '@/lib/article-detail-banners';
+import { reviewDetailPageUrl } from '@/lib/site-assets';
 
 function pad2(n: number) {
   return String(n).padStart(2, '0');
@@ -29,8 +30,6 @@ export const adminArticleSchema = z.object({
   coverImage: z.string().url('Cover image is required'),
   editorPickCoverImageMobile: z.string().url().optional().or(z.literal('')),
   editorPickCoverImageDesktop: z.string().url().optional().or(z.literal('')),
-  ogImage: z.string().url().optional().or(z.literal('')),
-  canonicalUrl: z.string().url().optional().or(z.literal('')),
   affiliateUrl: z.string().url().optional().or(z.literal('')),
   categoryId: z
     .string()
@@ -95,8 +94,8 @@ export function formValuesToArticleInput(
     coverImage: values.coverImage,
     editorPickCoverImageMobile: values.editorPickCoverImageMobile || undefined,
     editorPickCoverImageDesktop: values.editorPickCoverImageDesktop || undefined,
-    ogImage: values.ogImage || undefined,
-    canonicalUrl: values.canonicalUrl || undefined,
+    ogImage: values.coverImage,
+    canonicalUrl: reviewDetailPageUrl(values.slug),
     affiliateUrl: values.affiliateUrl || undefined,
     categoryId: values.categoryId,
     authorId: values.authorId,
@@ -161,8 +160,6 @@ export function articleToFormValues(
     coverImage: article.coverImage,
     editorPickCoverImageMobile: article.editorPickCoverImageMobile ?? '',
     editorPickCoverImageDesktop: article.editorPickCoverImageDesktop ?? '',
-    ogImage: article.ogImage ?? '',
-    canonicalUrl: article.canonicalUrl ?? '',
     affiliateUrl: article.affiliateUrl ?? '',
     categoryId: article.categoryId,
     authorId: article.authorId,

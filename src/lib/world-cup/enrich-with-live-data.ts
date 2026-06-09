@@ -13,15 +13,26 @@ export const getWorldCupLiveDataCached = unstable_cache(
   { revalidate: 120, tags: ['world-cup'] },
 );
 
+function emptyHomepageConfig(): SubcategoryHomepageConfig {
+  return { matches: [], groupStandings: [] };
+}
+
 function applyLiveDataToConfig(
-  config: SubcategoryHomepageConfig,
   live: NonNullable<Awaited<ReturnType<typeof fetchWorldCupLiveData>>>,
 ): SubcategoryHomepageConfig {
   return {
-    matches: live.matches.length ? live.matches : config.matches,
-    groupStandings: live.groupStandings.length
-      ? live.groupStandings
-      : config.groupStandings,
+    matches: live.matches,
+    groupStandings: live.groupStandings,
+  };
+}
+
+export function stripWorldCupLiveData(data: HomePageData): HomePageData {
+  return {
+    ...data,
+    featuredSubcategories: data.featuredSubcategories.map((item) => ({
+      ...item,
+      homepageConfig: emptyHomepageConfig(),
+    })),
   };
 }
 
@@ -31,7 +42,7 @@ function enrichFeaturedSubcategories(
 ): FeaturedSubcategory[] {
   return featured.map((item) => ({
     ...item,
-    homepageConfig: applyLiveDataToConfig(item.homepageConfig, live),
+    homepageConfig: applyLiveDataToConfig(live),
   }));
 }
 
@@ -41,7 +52,7 @@ export async function enrichHomePageWithWorldCupData(
   if (!data.featuredSubcategories.length) return data;
 
   const live = await getWorldCupLiveDataCached();
-  if (!live) return data;
+  if (!live) return stripWorldCupLiveData(data);
 
   return {
     ...data,
@@ -61,19 +72,12 @@ export async function resolveFeaturedMatchTicker(
 
   const live = await getWorldCupLiveDataCached();
 
-  if (live?.matches.length) {
-    return {
-      matches: live.matches,
-      accentColor: data.featuredSubcategories[0]?.accentColor ?? null,
-    };
+  if (!live?.matches.length) {
+    return { matches: [], accentColor: null };
   }
 
-  const merged = data.featuredSubcategories.flatMap(
-    (featured) => featured.homepageConfig.matches ?? [],
-  );
-
   return {
-    matches: merged,
+    matches: live.matches,
     accentColor: data.featuredSubcategories[0]?.accentColor ?? null,
   };
 }

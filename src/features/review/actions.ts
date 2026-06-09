@@ -14,6 +14,7 @@ import type { FeaturedMatchTicker } from '@/types/world-cup';
 import {
   enrichHomePageWithWorldCupData,
   resolveFeaturedMatchTicker,
+  stripWorldCupLiveData,
 } from '@/lib/world-cup/enrich-with-live-data';
 
 import {
@@ -40,17 +41,28 @@ import { getHomePageDataFromSupabase } from './lib/supabase-review-repository';
 
 async function resolveHomePageData(): Promise<HomePageData> {
   let data: HomePageData;
-  if (isSupabaseConfigured()) {
-    const supabase = createSupabasePublicClientIfConfigured();
-    if (supabase) {
-      data = await getHomePageDataFromSupabase(supabase);
+  try {
+    if (isSupabaseConfigured()) {
+      const supabase = createSupabasePublicClientIfConfigured();
+      if (supabase) {
+        data = await getHomePageDataFromSupabase(supabase);
+      } else {
+        data = getHomePageData();
+      }
     } else {
       data = getHomePageData();
     }
-  } else {
+  } catch (error) {
+    console.error('[review-home] data fetch failed, using fallback', error);
     data = getHomePageData();
   }
-  return enrichHomePageWithWorldCupData(data);
+
+  try {
+    return await enrichHomePageWithWorldCupData(data);
+  } catch (error) {
+    console.error('[review-home] world-cup enrichment failed', error);
+    return stripWorldCupLiveData(data);
+  }
 }
 
 export const getHomePageDataCached = unstable_cache(

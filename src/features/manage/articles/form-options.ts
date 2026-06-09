@@ -37,8 +37,6 @@ export function buildArticleFormDefaults(
     coverImage: '',
     editorPickCoverImageMobile: '',
     editorPickCoverImageDesktop: '',
-    ogImage: '',
-    canonicalUrl: '',
     affiliateUrl: '',
     status: 'draft',
     isActive: true,

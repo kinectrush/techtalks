@@ -5,6 +5,7 @@ import {
   toDbArticleDetailBanner,
 } from '@/lib/article-detail-banners';
 import { slugify } from '@/lib/slug';
+import { reviewDetailPageUrl } from '@/lib/site-assets';
 import type { ReviewEngagement } from '@/types/review';
 import type { AdminArticleInput, AdminArticleRow } from '@/types/admin';
 
@@ -301,8 +302,8 @@ export async function duplicateAdminArticle(
     coverImage: source.coverImage,
     editorPickCoverImageMobile: source.editorPickCoverImageMobile ?? undefined,
     editorPickCoverImageDesktop: source.editorPickCoverImageDesktop ?? undefined,
-    ogImage: source.ogImage ?? undefined,
-    canonicalUrl: source.canonicalUrl ?? undefined,
+    ogImage: source.coverImage,
+    canonicalUrl: reviewDetailPageUrl(slug),
     affiliateUrl: source.affiliateUrl ?? undefined,
     categoryId: source.categoryId,
     authorId: source.authorId,

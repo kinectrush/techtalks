@@ -48,6 +48,7 @@ import {
   type AdminArticleFormValues,
 } from '@/features/manage/articles/schema';
 import { slugify } from '@/lib/slug';
+import { reviewDetailPageUrl } from '@/lib/site-assets';
 import { cn } from '@/lib/utils';
 import type { AdminArticleRow } from '@/types/admin';
 
@@ -126,6 +127,8 @@ function ArticleFormDialogBody({
 
   const { register, handleSubmit, watch, setValue, formState } = form;
   const title = watch('title');
+  const slug = watch('slug');
+  const canonicalUrl = slug.trim() ? reviewDetailPageUrl(slug.trim()) : '';
 
   useEffect(() => {
     if (!slugTouched && title && !isEdit) {
@@ -288,12 +291,6 @@ function ArticleFormDialogBody({
                     />
                   </>
                 ) : null}
-                <ImageUploadField
-                  label="Ảnh Open Graph (chia sẻ mạng xã hội)"
-                  folder="og"
-                  value={watch('ogImage') ?? ''}
-                  onChange={(url) => setValue('ogImage', url)}
-                />
               </TabsContent>
 
               <TabsContent
@@ -324,7 +321,12 @@ function ArticleFormDialogBody({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="canonicalUrl">Canonical URL</Label>
-                  <Input id="canonicalUrl" {...register('canonicalUrl')} />
+                  <Input
+                    id="canonicalUrl"
+                    value={canonicalUrl}
+                    readOnly
+                    className="bg-muted"
+                  />
                 </div>
               </TabsContent>
 

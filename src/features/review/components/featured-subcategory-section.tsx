@@ -3,6 +3,7 @@ import { ArrowRight, Sparkles, Trophy } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 import { Link } from '@/i18n/navigation';
+import { cn } from '@/lib/utils';
 import { sortStandings } from '@/lib/world-cup/homepage-config';
 import type { FeaturedSubcategory } from '@/types/review';
 
@@ -149,7 +150,13 @@ export async function FeaturedSubcategorySection({
           ) : null}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)] lg:gap-8">
+        <div
+          className={cn(
+            'grid gap-6 lg:gap-8',
+            groups.length &&
+              'lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]',
+          )}
+        >
           <div className="min-w-0">
             {featured.articles.length ? (
               <div className="rounded-xl border border-white/10 bg-black/20 px-4 sm:px-5">

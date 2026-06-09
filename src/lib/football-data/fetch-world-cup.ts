@@ -8,67 +8,100 @@ import {
 import {
   computeGroupStandingsFromMatches,
   mapFootballDataMatch,
-  mapFootballDataStandings,
   pickTickerMatches,
 } from './map';
-import type {
-  FootballDataMatchesResponse,
-  FootballDataStandingsResponse,
-  WorldCupLiveData,
-} from './types';
+import type { FootballDataMatchesResponse, WorldCupLiveData } from './types';
+
+const FETCH_RETRIES = 2;
+const FETCH_TIMEOUT_MS = 15_000;
+
+function isTransientFetchError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  if (error.name === 'TimeoutError') return true;
+  const cause = error.cause;
+  if (cause && typeof cause === 'object' && 'code' in cause) {
+    const code = (cause as { code?: string }).code;
+    return (
+      code === 'UND_ERR_SOCKET' ||
+      code === 'ECONNRESET' ||
+      code === 'ETIMEDOUT'
+    );
+  }
+  return error.message.includes('fetch failed');
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 async function footballDataFetch<T>(path: string): Promise<T | null> {
   const token = getFootballDataApiToken();
   if (!token) return null;
 
   const url = `${FOOTBALL_DATA_API_BASE}${path}`;
-  const response = await fetch(url, {
-    headers: {
-      'X-Auth-Token': token,
-    },
-    cache: 'no-store',
-  });
 
-  if (!response.ok) {
-    const body = await response.text().catch(() => '');
-    console.error(
-      `[football-data] ${response.status} ${response.statusText} for ${path}`,
-      body.slice(0, 200),
-    );
-    return null;
+  for (let attempt = 0; attempt <= FETCH_RETRIES; attempt++) {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'X-Auth-Token': token,
+        },
+        next: { revalidate: 120 },
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      });
+
+      if (!response.ok) {
+        const body = await response.text().catch(() => '');
+        console.warn(
+          `[football-data] ${response.status} ${response.statusText} for ${path}`,
+          body.slice(0, 200),
+        );
+        return null;
+      }
+
+      return (await response.json()) as T;
+    } catch (error) {
+      if (attempt < FETCH_RETRIES && isTransientFetchError(error)) {
+        await sleep(400 * (attempt + 1));
+        continue;
+      }
+      const message =
+        error instanceof Error ? error.message : String(error);
+      console.warn(`[football-data] fetch failed for ${path}: ${message}`);
+      return null;
+    }
   }
 
-  return (await response.json()) as T;
+  return null;
 }
 
 export async function fetchWorldCupLiveData(): Promise<WorldCupLiveData | null> {
   if (!isFootballDataConfigured()) {
-    console.warn('[football-data] FOOTBALL_DATA_API_TOKEN is not configured');
     return null;
   }
 
-  const seasonQuery = `?season=${WORLD_CUP_SEASON}`;
-  const base = `/competitions/${WORLD_CUP_COMPETITION_CODE}`;
+  try {
+    const seasonQuery = `?season=${WORLD_CUP_SEASON}`;
+    const base = `/competitions/${WORLD_CUP_COMPETITION_CODE}`;
 
-  const [matchesPayload, standingsPayload] = await Promise.all([
-    footballDataFetch<FootballDataMatchesResponse>(`${base}/matches${seasonQuery}`),
-    footballDataFetch<FootballDataStandingsResponse>(`${base}/standings${seasonQuery}`),
-  ]);
+    // Standings endpoint is flaky; derive group tables from matches instead.
+    const matchesPayload = await footballDataFetch<FootballDataMatchesResponse>(
+      `${base}/matches${seasonQuery}`,
+    );
 
-  const rawMatches = matchesPayload?.matches ?? [];
-  const allMatches = rawMatches.map(mapFootballDataMatch);
-  const matches = pickTickerMatches(allMatches);
+    const rawMatches = matchesPayload?.matches ?? [];
+    const allMatches = rawMatches.map(mapFootballDataMatch);
+    const matches = pickTickerMatches(allMatches);
+    const groupStandings = computeGroupStandingsFromMatches(rawMatches);
 
-  let groupStandings = mapFootballDataStandings(standingsPayload?.standings ?? []);
-  if (groupStandings.length === 1 && groupStandings[0]?.group === 'WC') {
-    groupStandings = computeGroupStandingsFromMatches(rawMatches);
-  } else if (!groupStandings.length) {
-    groupStandings = computeGroupStandingsFromMatches(rawMatches);
-  }
+    if (!matches.length && !groupStandings.length) {
+      return null;
+    }
 
-  if (!matches.length && !groupStandings.length) {
+    return { matches, groupStandings };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`[football-data] fetchWorldCupLiveData failed: ${message}`);
     return null;
   }
-
-  return { matches, groupStandings };
 }
