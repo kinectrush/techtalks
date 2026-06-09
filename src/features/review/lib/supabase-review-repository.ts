@@ -16,6 +16,11 @@ import type {
   ReviewEngagement,
 } from '@/types/review';
 
+import {
+  HOME_LATEST_LIMIT,
+  HOME_TRENDING_24H_LIMIT,
+} from '@/lib/reviews/constants';
+
 import { enrichSummaries, sortByTrending } from './review-repository';
 
 type CategoryRow = { id: string; slug: string; name: string };
@@ -739,14 +744,14 @@ export async function getHomePageDataFromSupabase(
   const hero =
     summaries.find((a) => a.isEditorPick) ?? summaries[0] ?? null;
 
-  const trending24h = sortByTrending(summaries, '24h', 10);
+  const trending24h = sortByTrending(summaries, '24h', HOME_TRENDING_24H_LIMIT);
   const trending7d = sortByTrending(summaries, '7d', 8);
   const latest = [...summaries]
     .sort(
       (a, b) =>
         new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
     )
-    .slice(0, 12);
+    .slice(0, HOME_LATEST_LIMIT);
 
   return {
     hero,

@@ -19,6 +19,26 @@ const WEIGHTS = {
 
 const GRAVITY = 1.35;
 
+/** Top trending 24h: rank by window views, not time-decay score. */
+export function compareTopTrending24h(
+  a: { engagement: ReviewEngagement; publishedAt: string },
+  b: { engagement: ReviewEngagement; publishedAt: string },
+): number {
+  const viewsDiff = b.engagement.views24h - a.engagement.views24h;
+  if (viewsDiff !== 0) return viewsDiff;
+
+  const reactionsDiff =
+    b.engagement.reactions24h - a.engagement.reactions24h;
+  if (reactionsDiff !== 0) return reactionsDiff;
+
+  const commentsDiff = b.engagement.comments24h - a.engagement.comments24h;
+  if (commentsDiff !== 0) return commentsDiff;
+
+  return (
+    new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+  );
+}
+
 /** Top trending 7d: rank by window views, not time-decay score. */
 export function compareTopTrending7d(
   a: { engagement: ReviewEngagement; publishedAt: string },

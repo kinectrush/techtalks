@@ -1,10 +1,15 @@
 import type { PaginatedResponse } from '@/types/api';
 import {
   calculateTrendingScore,
+  compareTopTrending24h,
   compareTopTrending7d,
   getHotBadge,
 } from '@/lib/trending/calculate-score';
-import { REVIEWS_PAGE_SIZE } from '@/lib/reviews/constants';
+import {
+  HOME_LATEST_LIMIT,
+  HOME_TRENDING_24H_LIMIT,
+  REVIEWS_PAGE_SIZE,
+} from '@/lib/reviews/constants';
 import type {
   HomePageData,
   ReviewArticle,
@@ -81,9 +86,7 @@ export function sortByTrending(
   const sorted =
     window === '7d'
       ? [...summaries].sort(compareTopTrending7d)
-      : [...summaries].sort(
-          (a, b) => b.trendingScore24h - a.trendingScore24h,
-        );
+      : [...summaries].sort(compareTopTrending24h);
   const sliced = limit ? sorted.slice(0, limit) : sorted;
   const scoreKey = window === '24h' ? 'trendingScore24h' : 'trendingScore7d';
 
@@ -96,14 +99,14 @@ export function sortByTrending(
 
 export function getHomePageData(): HomePageData {
   const summaries = withListBadges(enrichSummaries(MOCK_ARTICLES));
-  const trending24h = sortByTrending(summaries, '24h', 6);
+  const trending24h = sortByTrending(summaries, '24h', HOME_TRENDING_24H_LIMIT);
   const trending7d = sortByTrending(summaries, '7d', 10);
   const latest = [...summaries]
     .sort(
       (a, b) =>
         new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
     )
-    .slice(0, 8);
+    .slice(0, HOME_LATEST_LIMIT);
 
   const heroBase =
     summaries.find((a) => a.isEditorPick) ??
