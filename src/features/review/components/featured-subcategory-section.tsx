@@ -129,7 +129,8 @@ export async function FeaturedSubcategorySection({
 
           <Link
             href={viewAllHref}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/90 transition-colors hover:text-brand"
+            className="inline-flex items-center gap-1.5 rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-black shadow-md transition-all hover:brightness-110 hover:shadow-lg"
+            style={{ backgroundColor: accent }}
           >
             {t('viewAll')}
             <ArrowRight className="h-4 w-4" />
