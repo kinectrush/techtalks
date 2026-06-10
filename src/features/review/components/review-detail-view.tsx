@@ -3,8 +3,10 @@ import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
 
 import { getActiveAdBannersCached } from '@/features/ad-banners/actions';
+import { getRelatedArticlesCached } from '@/features/review/actions';
 import { AdBannerSlot } from '@/features/ad-banners/components/ad-banner-slot';
 import { activeArticleDetailBanner } from '@/lib/article-detail-banners';
+import { reviewDetailPageUrl } from '@/lib/site-assets';
 import { cn } from '@/lib/utils';
 import type { ReviewSummary, ReviewTag } from '@/types/review';
 
@@ -18,6 +20,7 @@ function dedupeTagsBySlug(tags: ReviewTag[]): ReviewTag[] {
 }
 
 import { ArticleContent } from './article-content';
+import { RelatedArticlesSection } from './related-articles-section';
 import { AffiliateAutoOpen } from './affiliate-auto-open';
 import { ArticleDetailBannerDialog } from './article-detail-banner-dialog';
 import { ReviewEngagementBar } from './review-engagement-bar';
@@ -40,7 +43,10 @@ export async function ReviewDetailView({
   const authorName =
     article.author.name === 'Editorial' ? 'Admin' : article.author.name;
 
-  const adBanners = await getActiveAdBannersCached();
+  const [adBanners, relatedArticles] = await Promise.all([
+    getActiveAdBannersCached(),
+    isDraftPreview ? Promise.resolve([]) : getRelatedArticlesCached(article.slug),
+  ]);
   const desktopBanner = activeArticleDetailBanner(article.detailAdBannerDesktop);
   const mobileBanner = activeArticleDetailBanner(article.detailAdBannerMobile);
   const popupBanner = adBanners.review_detail_popup;
@@ -101,6 +107,7 @@ export async function ReviewDetailView({
             engagement={article.engagement}
             publishedAt={article.publishedAt}
             locale={locale}
+            shareUrl={reviewDetailPageUrl(article.slug)}
           />
         </div>
 
@@ -140,6 +147,8 @@ export async function ReviewDetailView({
             ))}
           </ul>
         ) : null}
+
+        <RelatedArticlesSection articles={relatedArticles} locale={locale} />
 
         {mobileBanner ? (
           <div className="mt-8 lg:hidden">

@@ -24,6 +24,9 @@
   --color-ring: var(--ring);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
+  --color-facebook: var(--facebook);
+  --color-facebook-active: var(--facebook-active);
+  --color-facebook-foreground: var(--facebook-foreground);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -40,6 +43,9 @@
   --popover-foreground: oklch(0.145 0 0);
   --brand: oklch(0.55 0.22 25);
   --brand-foreground: oklch(0.99 0 0);
+  --facebook: #1877f2;
+  --facebook-active: #166fe5;
+  --facebook-foreground: #ffffff;
   --primary: oklch(0.55 0.22 25);
   --primary-foreground: oklch(0.99 0 0);
   --secondary: oklch(0.97 0 0);
@@ -64,6 +70,9 @@
   --popover-foreground: oklch(0.985 0 0);
   --brand: oklch(0.62 0.2 25);
   --brand-foreground: oklch(0.99 0 0);
+  --facebook: #1877f2;
+  --facebook-active: #166fe5;
+  --facebook-foreground: #ffffff;
   --primary: oklch(0.62 0.2 25);
   --primary-foreground: oklch(0.99 0 0);
   --secondary: oklch(0.269 0 0);

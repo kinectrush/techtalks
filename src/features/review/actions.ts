@@ -37,6 +37,7 @@ import {
   resolveSearchArticles,
   resolveSearchArticlesPaginated,
 } from './lib/resolve-published-reviews';
+import { resolveRelatedArticles } from './lib/resolve-related-articles';
 import { getHomePageDataFromSupabase } from './lib/supabase-review-repository';
 
 async function resolveHomePageData(): Promise<HomePageData> {
@@ -213,6 +214,16 @@ export const getReviewsListPaginatedCached = unstable_cache(
   async (categorySlug: string | undefined, page: number) =>
     getReviewsListPaginatedAction({ categorySlug, page }),
   ['review-list-paginated-v1-db'],
+  { revalidate: 120, tags: ['reviews'] },
+);
+
+export const getRelatedArticlesCached = unstable_cache(
+  async (slug: string) => {
+    const article = await resolveArticleBySlug(slug);
+    if (!article) return [];
+    return resolveRelatedArticles(article);
+  },
+  ['review-related-articles-v1'],
   { revalidate: 120, tags: ['reviews'] },
 );
 

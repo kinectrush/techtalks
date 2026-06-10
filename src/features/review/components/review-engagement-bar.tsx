@@ -1,10 +1,14 @@
 'use client';
 
 import { Eye, ThumbsUp } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 
+import { FacebookIcon } from '@/components/icons/facebook-icon';
 import { Button } from '@/components/ui/button';
 import { formatNumber, formatRelativeTime } from '@/lib/format';
+import { cn } from '@/lib/utils';
+import { openFacebookSharePopup } from '@/lib/share/facebook';
 import type { ReviewEngagement } from '@/types/review';
 
 type ReviewEngagementBarProps = {
@@ -12,8 +16,12 @@ type ReviewEngagementBarProps = {
   engagement: ReviewEngagement;
   publishedAt: string;
   locale: string;
+  shareUrl: string;
   onLiked?: () => void;
 };
+
+const facebookButtonClass =
+  'border-facebook bg-facebook text-facebook-foreground shadow-none hover:bg-facebook/90 focus-visible:ring-facebook/30 disabled:opacity-80';
 
 function readLikedCookie(articleId: string): boolean {
   if (typeof document === 'undefined') return false;
@@ -25,8 +33,10 @@ export function ReviewEngagementBar({
   engagement: initialEngagement,
   publishedAt,
   locale,
+  shareUrl,
   onLiked,
 }: ReviewEngagementBarProps) {
+  const t = useTranslations('Review');
   const [engagement, setEngagement] = useState(initialEngagement);
   const [liked, setLiked] = useState(false);
   const viewKey = useMemo(() => `rv_view_once:${articleId}`, [articleId]);
@@ -77,17 +87,34 @@ export function ReviewEngagementBar({
         {formatNumber(engagement.reactions, locale)}
       </span>
 
-      <Button
-        type="button"
-        variant={liked ? 'secondary' : 'outline'}
-        size="sm"
-        className="ml-auto"
-        onClick={handleLike}
-        disabled={liked}
-      >
-        <ThumbsUp className="h-4 w-4" />
-        {liked ? 'Đã like' : 'Like'}
-      </Button>
+      <div className="ml-auto flex items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className={facebookButtonClass}
+          onClick={() => openFacebookSharePopup(shareUrl)}
+          aria-label={t('shareFacebook')}
+        >
+          <FacebookIcon className="h-4 w-4" />
+          <span className="hidden sm:inline">{t('shareFacebook')}</span>
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className={cn(
+            facebookButtonClass,
+            liked && 'bg-facebook-active hover:bg-facebook-active',
+          )}
+          onClick={handleLike}
+          disabled={liked}
+        >
+          <ThumbsUp className="h-4 w-4" />
+          {liked ? t('liked') : t('like')}
+        </Button>
+      </div>
     </div>
   );
 }
