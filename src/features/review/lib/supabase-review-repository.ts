@@ -17,6 +17,7 @@ import type {
 } from '@/types/review';
 
 import {
+  HOME_FEATURED_SUBCATEGORY_ARTICLE_LIMIT,
   HOME_LATEST_LIMIT,
   HOME_TRENDING_24H_LIMIT,
 } from '@/lib/reviews/constants';
@@ -574,8 +575,6 @@ type FeaturedSubcategoryRow = {
   homepage_config: unknown | null;
 };
 
-const FEATURED_ARTICLE_LIMIT = 6;
-
 async function fetchHomepageFeaturedSubcategories(
   supabase: SupabaseClient,
 ): Promise<FeaturedSubcategory[]> {
@@ -653,7 +652,7 @@ async function buildFeaturedSubcategories(
       .eq('is_active', true)
       .eq('category_id', row.id)
       .order('published_at', { ascending: false })
-      .limit(FEATURED_ARTICLE_LIMIT);
+      .limit(HOME_FEATURED_SUBCATEGORY_ARTICLE_LIMIT);
 
     if (articlesError) {
       if (isMissingColumnError(articlesError as PostgrestErrorLike)) continue;
