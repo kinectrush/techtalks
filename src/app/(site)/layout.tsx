@@ -29,6 +29,7 @@ export default async function SiteLayout({ children }: { children: ReactNode }) 
         <div className="sticky top-14 z-40 lg:top-16">
           <WorldCupMatchTicker
             matches={tickerMatches}
+            locale="vi"
             accentColor={ticker.accentColor ?? DEFAULT_TICKER_ACCENT}
             labels={{
               live: messages.worldCupLive,

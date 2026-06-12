@@ -12,6 +12,8 @@ export type TournamentMatch = {
   kickoffAt: string;
   stage: string;
   status: TournamentMatchStatus;
+  /** Group stage fixture (vòng bảng); knockout when false/undefined from legacy data. */
+  isGroupStage?: boolean;
 };
 
 export type GroupStandingRow = {

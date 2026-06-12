@@ -8,6 +8,7 @@ type FootballDataTeam = {
 type FootballDataScore = {
   winner?: string | null;
   fullTime?: { home?: number | null; away?: number | null };
+  halfTime?: { home?: number | null; away?: number | null };
 };
 
 export type FootballDataMatch = {

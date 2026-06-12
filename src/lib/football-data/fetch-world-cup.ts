@@ -34,7 +34,15 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function footballDataFetch<T>(path: string): Promise<T | null> {
+type FootballDataFetchOptions = {
+  /** When true, bypass Next.js fetch cache for live score updates. */
+  fresh?: boolean;
+};
+
+async function footballDataFetch<T>(
+  path: string,
+  options?: FootballDataFetchOptions,
+): Promise<T | null> {
   const token = getFootballDataApiToken();
   if (!token) return null;
 
@@ -46,7 +54,9 @@ async function footballDataFetch<T>(path: string): Promise<T | null> {
         headers: {
           'X-Auth-Token': token,
         },
-        next: { revalidate: 120 },
+        ...(options?.fresh
+          ? { cache: 'no-store' as const }
+          : { next: { revalidate: 120 } }),
         signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       });
 
@@ -75,7 +85,9 @@ async function footballDataFetch<T>(path: string): Promise<T | null> {
   return null;
 }
 
-export async function fetchWorldCupLiveData(): Promise<WorldCupLiveData | null> {
+export async function fetchWorldCupLiveData(options?: {
+  fresh?: boolean;
+}): Promise<WorldCupLiveData | null> {
   if (!isFootballDataConfigured()) {
     return null;
   }
@@ -87,6 +99,7 @@ export async function fetchWorldCupLiveData(): Promise<WorldCupLiveData | null> 
     // Standings endpoint is flaky; derive group tables from matches instead.
     const matchesPayload = await footballDataFetch<FootballDataMatchesResponse>(
       `${base}/matches${seasonQuery}`,
+      options,
     );
 
     const rawMatches = matchesPayload?.matches ?? [];

@@ -1,5 +1,9 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
+
+import { cn } from '@/lib/utils';
+import { formatMatchKickoff } from '@/lib/world-cup/format-kickoff';
 import type { TournamentMatch } from '@/types/world-cup';
 
 export type TickerMatchItem = TournamentMatch & {
@@ -8,12 +12,26 @@ export type TickerMatchItem = TournamentMatch & {
 
 type WorldCupMatchTickerProps = {
   matches: TickerMatchItem[];
+  locale: string;
   accentColor: string;
   labels: {
     live: string;
     fullTime: string;
   };
 };
+
+const LIVE_REFRESH_MS = 30_000;
+const DEFAULT_REFRESH_MS = 120_000;
+
+function toTickerItems(
+  matches: TournamentMatch[],
+  locale: string,
+): TickerMatchItem[] {
+  return matches.map((match) => ({
+    ...match,
+    kickoffLabel: formatMatchKickoff(match.kickoffAt, locale),
+  }));
+}
 
 function MatchTickerItem({
   match,
@@ -76,13 +94,97 @@ function MatchTickerItem({
 }
 
 export function WorldCupMatchTicker({
-  matches,
+  matches: initialMatches,
+  locale,
   accentColor,
   labels,
 }: WorldCupMatchTickerProps) {
-  if (!matches.length) return null;
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [trackStyle, setTrackStyle] = useState<React.CSSProperties>({});
+  const [isReady, setIsReady] = useState(false);
+  const [items, setItems] = useState(initialMatches);
+  const itemsRef = useRef(initialMatches);
 
-  const durationSeconds = Math.max(60, matches.length * 4);
+  const durationSeconds = Math.max(120, items.length * 8);
+
+  useEffect(() => {
+    itemsRef.current = initialMatches;
+    setItems(initialMatches);
+  }, [initialMatches]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let timeoutId = 0;
+
+    function scheduleNextRefresh() {
+      if (cancelled) return;
+
+      const hasLive = itemsRef.current.some((match) => match.status === 'live');
+      const intervalMs = hasLive ? LIVE_REFRESH_MS : DEFAULT_REFRESH_MS;
+      timeoutId = window.setTimeout(() => {
+        void refreshTicker();
+      }, intervalMs);
+    }
+
+    async function refreshTicker() {
+      try {
+        const response = await fetch('/api/world-cup/ticker', {
+          cache: 'no-store',
+        });
+        if (!response.ok || cancelled) return;
+
+        const payload = (await response.json()) as {
+          matches?: TournamentMatch[];
+        };
+        if (!payload.matches?.length || cancelled) return;
+
+        const nextItems = toTickerItems(payload.matches, locale);
+        itemsRef.current = nextItems;
+        setItems(nextItems);
+      } catch {
+        // Keep showing the last known ticker data.
+      } finally {
+        scheduleNextRefresh();
+      }
+    }
+
+    void refreshTicker();
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [locale]);
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    const track = trackRef.current;
+    if (!viewport || !track || !items.length) return;
+
+    const updateTickerMetrics = () => {
+      const viewportWidth = viewport.offsetWidth;
+      const halfTrackWidth = track.scrollWidth / 2;
+      if (halfTrackWidth <= 0) return;
+
+      setTrackStyle({
+        '--world-cup-ticker-duration': `${durationSeconds}s`,
+        '--ticker-translate-start': `${viewportWidth}px`,
+        '--ticker-translate-end': `${viewportWidth - halfTrackWidth}px`,
+      } as React.CSSProperties);
+      setIsReady(true);
+    };
+
+    updateTickerMetrics();
+
+    const resizeObserver = new ResizeObserver(updateTickerMetrics);
+    resizeObserver.observe(viewport);
+    resizeObserver.observe(track);
+
+    return () => resizeObserver.disconnect();
+  }, [items, durationSeconds]);
+
+  if (!items.length) return null;
 
   return (
     <div
@@ -92,16 +194,19 @@ export function WorldCupMatchTicker({
       <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-[#0a1510] to-transparent" />
       <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-[#0a1510] to-transparent" />
 
-      <div className="world-cup-ticker-viewport h-14 overflow-hidden lg:h-16">
+      <div
+        ref={viewportRef}
+        className="world-cup-ticker-viewport h-14 overflow-hidden lg:h-16"
+      >
         <div
-          className="world-cup-ticker-track flex w-max flex-row flex-nowrap items-stretch"
-          style={
-            {
-              '--world-cup-ticker-duration': `${durationSeconds}s`,
-            } as React.CSSProperties
-          }
+          ref={trackRef}
+          className={cn(
+            'world-cup-ticker-track flex w-max flex-row flex-nowrap items-stretch',
+            isReady && 'world-cup-ticker-track--active',
+          )}
+          style={trackStyle}
         >
-          {matches.map((match) => (
+          {items.map((match) => (
             <MatchTickerItem
               key={`a-${match.id}`}
               match={match}
@@ -109,7 +214,7 @@ export function WorldCupMatchTicker({
               labels={labels}
             />
           ))}
-          {matches.map((match) => (
+          {items.map((match) => (
             <MatchTickerItem
               key={`b-${match.id}`}
               match={match}

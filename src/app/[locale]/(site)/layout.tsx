@@ -35,6 +35,7 @@ export default async function SiteLayout({ children }: SiteLayoutProps) {
         <div className="sticky top-14 z-40 lg:top-16">
           <WorldCupMatchTicker
             matches={tickerMatches}
+            locale={locale}
             accentColor={ticker.accentColor ?? DEFAULT_TICKER_ACCENT}
             labels={{
               live: t('worldCupLive'),
