@@ -10,15 +10,12 @@ import {
   DialogContent,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { openExternalLink } from '@/lib/navigation/open-external-link';
 
 type ArticleDetailBannerDialogProps = {
   imageUrl: string;
   linkUrl?: string | null;
 };
-
-function openInNewTab(url: string) {
-  window.open(url, '_blank', 'noopener,noreferrer');
-}
 
 export function ArticleDetailBannerDialog({
   imageUrl,
@@ -30,7 +27,7 @@ export function ArticleDetailBannerDialog({
 
   const dismiss = useCallback(() => {
     setOpen(false);
-    if (href) openInNewTab(href);
+    if (href) openExternalLink(href);
   }, [href]);
 
   function handleOpenChange(nextOpen: boolean) {
@@ -43,7 +40,7 @@ export function ArticleDetailBannerDialog({
 
   function handleBannerClick() {
     if (!href) return;
-    openInNewTab(href);
+    openExternalLink(href);
   }
 
   return (

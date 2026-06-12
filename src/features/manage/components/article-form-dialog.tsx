@@ -223,8 +223,8 @@ function ArticleFormDialogBody({
                     {...register('affiliateUrl')}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Nếu có, khi mở trang chi tiết sẽ thử mở thêm 1 tab sang link
-                    này.
+                    Nếu có, khi mở trang chi tiết sẽ tự mở link affiliate (trên
+                    Facebook/Zalo dùng iframe để không chặn quay lại bài viết).
                   </p>
                 </div>
                 <div className="space-y-2">

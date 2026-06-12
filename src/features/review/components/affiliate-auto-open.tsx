@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
+import { openExternalLink } from '@/lib/navigation/open-external-link';
+
 type AffiliateAutoOpenProps = {
   url: string;
 };
@@ -17,17 +19,14 @@ export function AffiliateAutoOpen({ url }: AffiliateAutoOpenProps) {
       if (sessionStorage.getItem(key)) return;
       sessionStorage.setItem(key, '1');
 
-      const win = window.open(url, '_blank', 'noopener,noreferrer');
-      if (!win) setBlocked(true);
+      if (!openExternalLink(url)) setBlocked(true);
     } catch {
-      // ignore
+      setBlocked(true);
     }
   }, [url, key]);
 
   if (!blocked) return null;
 
-  return (
-    <></>
-  );
+  return null;
 }
 

@@ -1,5 +1,6 @@
 import Image from 'next/image';
 
+import { ExternalLink } from '@/components/common/external-link';
 import { cn } from '@/lib/utils';
 import type { AdBannerAspectRatio } from '@/lib/ad-banners/constants';
 
@@ -49,14 +50,13 @@ export function AdBannerSlot({
 
   if (href) {
     return (
-      <a
+      <ExternalLink
         href={href}
-        target="_blank"
         rel="noopener noreferrer sponsored"
         className="block cursor-pointer transition-opacity hover:opacity-95"
       >
         {content}
-      </a>
+      </ExternalLink>
     );
   }
 
