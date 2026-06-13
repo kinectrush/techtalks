@@ -223,8 +223,8 @@ function ArticleFormDialogBody({
                     {...register('affiliateUrl')}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Nếu có, khi mở trang chi tiết sẽ tự mở link affiliate (trên
-                    Facebook/Zalo dùng iframe để không chặn quay lại bài viết).
+                    Trên Facebook/Zalo: hiện nút sticky + tự mở link (không dùng iframe).
+                    Trình duyệt thường: tự mở tab mới.
                   </p>
                 </div>
                 <div className="space-y-2">

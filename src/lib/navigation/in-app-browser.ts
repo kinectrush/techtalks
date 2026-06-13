@@ -1,4 +1,4 @@
-/** Detect embedded in-app browsers (Facebook, Zalo, Instagram, …) where `window.open` pollutes webview history. */
+/** Detect embedded in-app browsers (Facebook, Zalo, Instagram, …). */
 export function isInAppBrowser(userAgent = ''): boolean {
   const ua = userAgent || (typeof navigator !== 'undefined' ? navigator.userAgent : '');
 

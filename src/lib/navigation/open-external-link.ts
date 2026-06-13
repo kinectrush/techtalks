@@ -1,35 +1,26 @@
-import { isInAppBrowser } from '@/lib/navigation/in-app-browser';
-
-const IFRAME_CLEANUP_MS = 3_000;
-
-function openViaHiddenIframe(url: string): void {
-  const iframe = document.createElement('iframe');
-  iframe.style.cssText =
-    'display:none;width:0;height:0;border:0;position:absolute;left:-9999px;';
-  iframe.setAttribute('aria-hidden', 'true');
-  iframe.src = url;
-  document.body.appendChild(iframe);
-
-  window.setTimeout(() => {
-    iframe.remove();
-  }, IFRAME_CLEANUP_MS);
-}
-
 /**
- * Open an external URL without leaving the current page stuck behind affiliate redirects
- * in Facebook/Zalo-style in-app browsers.
+ * Programmatic external navigation (banner dismiss, dialogs, auto-open on desktop).
+ * Prefer a real `<a target="_blank">` click in Facebook/Zalo in-app browsers — see
+ * `triggerAnchorNavigation`.
  */
 export function openExternalLink(url: string): boolean {
   if (!url?.trim() || typeof window === 'undefined') return false;
 
   try {
-    if (isInAppBrowser()) {
-      openViaHiddenIframe(url);
-      return true;
-    }
-
     const win = window.open(url, '_blank', 'noopener,noreferrer');
     return win !== null;
+  } catch {
+    return false;
+  }
+}
+
+/** Simulate a user tap on an anchor — keeps the article webview and avoids iframe app prompts. */
+export function triggerAnchorNavigation(anchor: HTMLAnchorElement | null): boolean {
+  if (!anchor?.href || typeof window === 'undefined') return false;
+
+  try {
+    anchor.click();
+    return true;
   } catch {
     return false;
   }

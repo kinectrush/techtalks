@@ -188,7 +188,7 @@ export function BannerFormDialog({
             />
             <p className="text-xs text-muted-foreground">
               {placement === 'review_detail_popup'
-                ? 'Nếu có link: click banner hoặc nút X sẽ mở tab mới. Không có link thì nút X chỉ đóng popup.'
+                ? 'Nếu có link: bấm X hoặc banner mở tab mới (tối ưu Facebook webview). Không có link thì X chỉ đóng popup.'
                 : 'Nếu có link, click banner sẽ mở tab mới. Để trống thì không có hành động khi click.'}
             </p>
             {errors.linkUrl ? (

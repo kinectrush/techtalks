@@ -21,7 +21,7 @@ function dedupeTagsBySlug(tags: ReviewTag[]): ReviewTag[] {
 
 import { ArticleContent } from './article-content';
 import { RelatedArticlesSection } from './related-articles-section';
-import { AffiliateAutoOpen } from './affiliate-auto-open';
+import { AffiliateLinkHandler } from './affiliate-link-handler';
 import { ArticleDetailBannerDialog } from './article-detail-banner-dialog';
 import { ReviewEngagementBar } from './review-engagement-bar';
 import { StarRating } from './star-rating';
@@ -39,7 +39,8 @@ export async function ReviewDetailView({
 }: ReviewDetailViewProps) {
   const t = await getTranslations('Review');
   const hasContent = Boolean(article.content?.trim());
-  const affiliateUrl = article.affiliateLinks?.[0]?.url ?? '';
+  const affiliateLink = article.affiliateLinks?.[0];
+  const affiliateUrl = affiliateLink?.url ?? '';
   const authorName =
     article.author.name === 'Editorial' ? 'Admin' : article.author.name;
 
@@ -82,7 +83,6 @@ export async function ReviewDetailView({
         <h1 className="text-3xl font-bold leading-tight tracking-tight md:text-4xl">
           {article.title}
         </h1>
-        {affiliateUrl ? <AffiliateAutoOpen url={affiliateUrl} /> : null}
 
         <div className="mt-4 flex flex-wrap items-center gap-4 border-b pb-6">
           <div className="flex items-center gap-2">
@@ -158,6 +158,14 @@ export async function ReviewDetailView({
               aspectRatio="16/9"
             />
           </div>
+        ) : null}
+
+        {affiliateUrl ? (
+          <AffiliateLinkHandler
+            url={affiliateUrl}
+            platform={affiliateLink?.platform}
+            label={affiliateLink?.label}
+          />
         ) : null}
       </article>
 
