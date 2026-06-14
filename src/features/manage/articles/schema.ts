@@ -1,5 +1,11 @@
 import { z } from 'zod';
 
+import {
+  ARTICLE_ALL_SUBCATEGORY,
+  resolveCategoryFormFields,
+  resolveStoredCategoryId,
+  type ArticleFormCategoryOption,
+} from '@/features/manage/articles/form-options';
 import type { ArticleDetailAdBanner } from '@/lib/article-detail-banners';
 import { reviewDetailPageUrl } from '@/lib/site-assets';
 
@@ -31,10 +37,11 @@ export const adminArticleSchema = z.object({
   editorPickCoverImageMobile: z.string().url().optional().or(z.literal('')),
   editorPickCoverImageDesktop: z.string().url().optional().or(z.literal('')),
   affiliateUrl: z.string().url().optional().or(z.literal('')),
-  categoryId: z
+  parentCategoryId: z
     .string()
     .min(1, 'Vui lòng chọn danh mục')
     .uuid('Vui lòng chọn danh mục'),
+  subcategoryId: z.string(),
   authorId: z
     .string()
     .min(1, 'Vui lòng chọn tác giả')
@@ -54,6 +61,17 @@ export const adminArticleSchema = z.object({
   detailAdBannerMobileImageUrl: z.string().url().optional().or(z.literal('')),
   detailAdBannerMobileLinkUrl: z.string().url().optional().or(z.literal('')),
   detailAdBannerMobileActive: z.boolean().optional(),
+}).superRefine((values, ctx) => {
+  if (
+    values.subcategoryId !== ARTICLE_ALL_SUBCATEGORY &&
+    !z.string().uuid().safeParse(values.subcategoryId).success
+  ) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'Vui lòng chọn danh mục con',
+      path: ['subcategoryId'],
+    });
+  }
 });
 
 export type AdminArticleFormValues = z.infer<typeof adminArticleSchema>;
@@ -97,7 +115,10 @@ export function formValuesToArticleInput(
     ogImage: values.coverImage,
     canonicalUrl: reviewDetailPageUrl(values.slug),
     affiliateUrl: values.affiliateUrl || undefined,
-    categoryId: values.categoryId,
+    categoryId: resolveStoredCategoryId(
+      values.parentCategoryId,
+      values.subcategoryId,
+    ),
     authorId: values.authorId,
     publishedAt: datetimeLocalToIso(values.publishedAt),
     status: values.status,
@@ -147,9 +168,14 @@ function detailBannerToFormFields(banner: ArticleDetailAdBanner | null) {
 
 export function articleToFormValues(
   article: import('@/types/admin').AdminArticleRow,
+  categories: ArticleFormCategoryOption[] = [],
 ): AdminArticleFormValues {
   const desktop = detailBannerToFormFields(article.detailAdBannerDesktop);
   const mobile = detailBannerToFormFields(article.detailAdBannerMobile);
+  const { parentCategoryId, subcategoryId } = resolveCategoryFormFields(
+    article.categoryId,
+    categories,
+  );
 
   return {
     title: article.title,
@@ -161,7 +187,8 @@ export function articleToFormValues(
     editorPickCoverImageMobile: article.editorPickCoverImageMobile ?? '',
     editorPickCoverImageDesktop: article.editorPickCoverImageDesktop ?? '',
     affiliateUrl: article.affiliateUrl ?? '',
-    categoryId: article.categoryId,
+    parentCategoryId,
+    subcategoryId,
     authorId: article.authorId,
     publishedAt: isoToDatetimeLocal(article.publishedAt),
     status: article.status,

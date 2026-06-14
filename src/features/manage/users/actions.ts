@@ -9,6 +9,7 @@ import {
   setAdminUserActive,
   updateAdminUser,
 } from '@/features/manage/users/repository';
+import { DEFAULT_PAGE_SIZE } from '@/lib/pagination';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import type { AdminUserInput } from '@/types/admin';
 
@@ -18,9 +19,9 @@ async function guard() {
   return { supabase, current };
 }
 
-export async function listUsersAction() {
+export async function listUsersAction(page = 1, pageSize = DEFAULT_PAGE_SIZE) {
   const { supabase } = await guard();
-  return listAdminUsers(supabase);
+  return listAdminUsers(supabase, page, pageSize);
 }
 
 export async function createUserAction(input: AdminUserInput) {

@@ -5,13 +5,13 @@ import { getActiveAdBannersCached } from '@/features/ad-banners/actions';
 import { AdBannerSlot } from '@/features/ad-banners/components/ad-banner-slot';
 import {
   getCategoryLabelCached,
-  getPublicCategoriesAction,
+  getReviewsCategoryContextCached,
   getReviewsListPaginatedCached,
   searchReviewsPaginatedCached,
 } from '@/features/review/actions';
 import { ReviewsInfiniteList } from '@/features/review/components/reviews-infinite-list';
 import { normalizeSearchQuery } from '@/lib/search/normalize-query';
-import { filterPublicCategories } from '@/lib/category/constants';
+import { resolveReviewsListCategorySlug } from '@/lib/reviews/resolve-list-category-slug';
 import {
   buildOpenGraphImages,
   getReviewsOpenGraphImage,
@@ -138,12 +138,19 @@ export default async function ReviewsPage({
 
   const searchQuery = normalizeSearchQuery(rawQuery ?? '') ?? undefined;
 
-  const [listResult, categories, categoryLabel, t, adBanners] =
-    await Promise.all([
+  const categoryContext =
+    categorySlug && !searchQuery
+      ? await getReviewsCategoryContextCached(categorySlug)
+      : null;
+  const listCategorySlug = resolveReviewsListCategorySlug(
+    categorySlug,
+    categoryContext,
+  );
+
+  const [listResult, categoryLabel, t, adBanners] = await Promise.all([
     searchQuery
-      ? searchReviewsPaginatedCached(searchQuery, categorySlug, 1)
-      : getReviewsListPaginatedCached(categorySlug, 1),
-    getPublicCategoriesAction(),
+      ? searchReviewsPaginatedCached(searchQuery, listCategorySlug, 1)
+      : getReviewsListPaginatedCached(listCategorySlug, 1),
     categorySlug ? getCategoryLabelCached(categorySlug) : Promise.resolve(null),
     getTranslations('Review'),
     getActiveAdBannersCached(),
@@ -153,19 +160,17 @@ export default async function ReviewsPage({
 
   const reviewsBanner = adBanners.reviews;
 
-  const publicCategories = filterPublicCategories(categories);
-
   const activeCategory = categoryLabel
     ? { slug: categoryLabel.slug, name: categoryLabel.name }
-    : categorySlug
-      ? publicCategories.find((c) => c.slug === categorySlug)
-      : undefined;
+    : undefined;
 
   const pageTitle = searchQuery
     ? t('searchResultsFor', { query: searchQuery })
-    : activeCategory
-      ? activeCategory.name
-      : t('allReviews');
+    : categoryContext && categoryContext.isParentAll
+      ? categoryContext.parent.name
+      : activeCategory
+        ? activeCategory.name
+        : t('allReviews');
 
   const emptyMessage = searchQuery
     ? t('noSearchResults')
@@ -190,10 +195,13 @@ export default async function ReviewsPage({
         </p>
       ) : null}
 
-      {!searchQuery ? (
+      {!searchQuery && categoryContext && categoryContext.subcategories.length > 0 ? (
         <ReviewsCategoryFilter
-          categories={publicCategories}
-          activeSlug={categorySlug}
+          parentCategory={categoryContext.parent}
+          subcategories={categoryContext.subcategories}
+          activeSubSlug={
+            categoryContext.isParentAll ? undefined : categorySlug
+          }
         />
       ) : null}
 
@@ -203,13 +211,13 @@ export default async function ReviewsPage({
         </p>
       ) : (
         <ReviewsInfiniteList
-          key={`${categorySlug ?? ''}-${searchQuery ?? ''}`}
+          key={`${listCategorySlug ?? ''}-${searchQuery ?? ''}`}
           initialItems={articles}
           initialPage={listResult.page}
           total={listResult.total}
           pageSize={listResult.pageSize}
           locale={locale}
-          categorySlug={categorySlug}
+          categorySlug={listCategorySlug}
           searchQuery={searchQuery}
           labels={{
             hotLabel: t('badgeHot'),

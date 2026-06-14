@@ -2,6 +2,7 @@
 
 import { Eye } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -19,15 +20,33 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { ManagePagination } from '@/features/manage/components/manage-pagination';
+import { listContactMessagesAction } from '@/features/manage/messages/actions';
+import { usePendingKeys } from '@/features/manage/hooks/use-pending-keys';
+import type { PaginatedResult } from '@/lib/pagination';
 import type { AdminContactMessage } from '@/types/admin';
 
 type MessagesManagerProps = {
-  initialMessages: AdminContactMessage[];
+  initialResult: PaginatedResult<AdminContactMessage>;
 };
 
-export function MessagesManager({ initialMessages }: MessagesManagerProps) {
-  const [messages] = useState(initialMessages);
+export function MessagesManager({ initialResult }: MessagesManagerProps) {
+  const [result, setResult] = useState(initialResult);
   const [active, setActive] = useState<AdminContactMessage | null>(null);
+  const { run, isAnyPending } = usePendingKeys();
+
+  const messages = result.items;
+
+  function handlePageChange(page: number) {
+    void run('page', async () => {
+      try {
+        const data = await listContactMessagesAction(page, result.pageSize);
+        setResult(data);
+      } catch {
+        toast.error('Không tải được danh sách tin nhắn');
+      }
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -86,6 +105,14 @@ export function MessagesManager({ initialMessages }: MessagesManagerProps) {
         </Table>
       </div>
 
+      <ManagePagination
+        page={result.page}
+        total={result.total}
+        pageSize={result.pageSize}
+        onPageChange={handlePageChange}
+        disabled={isAnyPending}
+      />
+
       <Dialog open={Boolean(active)} onOpenChange={() => setActive(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -107,4 +134,3 @@ export function MessagesManager({ initialMessages }: MessagesManagerProps) {
     </div>
   );
 }
-

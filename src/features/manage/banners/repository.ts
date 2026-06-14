@@ -1,6 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { AdBannerPlacement } from '@/lib/ad-banners/constants';
+import {
+  DEFAULT_PAGE_SIZE,
+  paginateRange,
+  type PaginatedResult,
+} from '@/lib/pagination';
 import type { AdBanner, AdBannerInput } from '@/types/ad-banner';
 
 type DbBanner = {
@@ -63,15 +68,28 @@ async function deactivateSiblingsForPlacement(
   if (error) throw error;
 }
 
-export async function listAdminBanners(supabase: SupabaseClient) {
-  const { data, error } = await supabase
+export async function listAdminBanners(
+  supabase: SupabaseClient,
+  page = 1,
+  pageSize = DEFAULT_PAGE_SIZE,
+): Promise<PaginatedResult<AdBanner>> {
+  const { from, to, page: safePage } = paginateRange(page, pageSize);
+
+  const { data, error, count } = await supabase
     .from('ad_banners')
-    .select(SELECT)
+    .select(SELECT, { count: 'exact' })
     .order('placement', { ascending: true })
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .range(from, to);
 
   if (error) throw error;
-  return ((data ?? []) as DbBanner[]).map(mapBanner);
+
+  return {
+    items: ((data ?? []) as DbBanner[]).map(mapBanner),
+    total: count ?? 0,
+    page: safePage,
+    pageSize,
+  };
 }
 
 export async function createAdminBanner(

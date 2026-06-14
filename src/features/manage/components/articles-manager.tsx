@@ -2,7 +2,7 @@
 
 import { Copy, Eye, Pencil, Plus, Search, ThumbsUp, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import {
@@ -17,7 +17,15 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import {
   Table,
@@ -36,25 +44,43 @@ import {
 } from '@/features/manage/articles/actions';
 import { ManageActionButton } from '@/features/manage/components/manage-action-button';
 import { ManageLoadingButton } from '@/features/manage/components/manage-loading-button';
+import { ManagePagination } from '@/features/manage/components/manage-pagination';
 import { ManagePendingOverlay } from '@/features/manage/components/manage-pending-overlay';
 import { usePendingKeys } from '@/features/manage/hooks/use-pending-keys';
+import type {
+  ArticleFormCategoryOption,
+  ArticleFormOption,
+} from '@/features/manage/articles/form-options';
+import {
+  ARTICLE_ALL_PARENT_CATEGORY,
+  ARTICLE_ALL_SUBCATEGORY,
+  getParentCategories,
+  getSubcategoriesForParent,
+} from '@/features/manage/articles/form-options';
 import { formatNumber } from '@/lib/format';
+import { totalPages, type PaginatedResult } from '@/lib/pagination';
 import type { AdminArticleRow } from '@/types/admin';
 
-type Option = { id: string; name: string; slug?: string };
-
 type ArticlesManagerProps = {
-  initialArticles: AdminArticleRow[];
-  categories: Option[];
-  authors: Option[];
+  initialResult: PaginatedResult<AdminArticleRow>;
+  totalViews: number;
+  categories: ArticleFormCategoryOption[];
+  authors: ArticleFormOption[];
 };
 
 export function ArticlesManager({
-  initialArticles,
+  initialResult,
+  totalViews,
+  categories,
 }: ArticlesManagerProps) {
   const router = useRouter();
-  const [articles, setArticles] = useState(initialArticles);
+  const [result, setResult] = useState(initialResult);
   const [search, setSearch] = useState('');
+  const [parentCategoryId, setParentCategoryId] = useState(
+    ARTICLE_ALL_PARENT_CATEGORY,
+  );
+  const [subcategoryId, setSubcategoryId] = useState(ARTICLE_ALL_SUBCATEGORY);
+  const prevParentRef = useRef(parentCategoryId);
   const { run, isPending, isAnyPending } = usePendingKeys();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [articleToDelete, setArticleToDelete] = useState<AdminArticleRow | null>(
@@ -63,16 +89,96 @@ export function ArticlesManager({
   const [isDeleting, setIsDeleting] = useState(false);
 
   const tableBusy = isAnyPending || isDeleting;
+  const articles = result.items;
 
-  function handleSearch() {
-    void run('search', async () => {
+  const parentOptions = useMemo(
+    () => getParentCategories(categories),
+    [categories],
+  );
+
+  const subcategoryOptions = useMemo(() => {
+    if (parentCategoryId === ARTICLE_ALL_PARENT_CATEGORY) return [];
+    return getSubcategoriesForParent(categories, parentCategoryId);
+  }, [categories, parentCategoryId]);
+
+  const hasSubcategoryFilter = subcategoryOptions.length > 0;
+
+  function buildListParams(
+    page: number,
+    overrides?: {
+      parentId?: string;
+      subId?: string;
+      searchTerm?: string;
+    },
+  ) {
+    const parent =
+      overrides?.parentId ??
+      (parentCategoryId !== ARTICLE_ALL_PARENT_CATEGORY
+        ? parentCategoryId
+        : undefined);
+    const sub =
+      overrides?.subId ??
+      (parent ? subcategoryId : undefined);
+
+    return {
+      search: (overrides?.searchTerm ?? search) || undefined,
+      parentCategoryId: parent,
+      subcategoryId: sub,
+      page,
+      pageSize: result.pageSize,
+    };
+  }
+
+  function loadList(
+    page: number,
+    overrides?: {
+      parentId?: string;
+      subId?: string;
+      searchTerm?: string;
+    },
+  ) {
+    void run('list', async () => {
       try {
-        const data = await listArticlesAction(search || undefined);
-        setArticles(data);
+        const data = await listArticlesAction(buildListParams(page, overrides));
+        setResult(data);
       } catch {
         toast.error('Không tải được danh sách bài viết');
       }
     });
+  }
+
+  useEffect(() => {
+    if (prevParentRef.current === parentCategoryId) return;
+    prevParentRef.current = parentCategoryId;
+    setSubcategoryId(ARTICLE_ALL_SUBCATEGORY);
+  }, [parentCategoryId]);
+
+  function handleFilter() {
+    loadList(1);
+  }
+
+  function handleParentCategoryChange(value: string) {
+    setParentCategoryId(value);
+    setSubcategoryId(ARTICLE_ALL_SUBCATEGORY);
+    prevParentRef.current = value;
+    loadList(1, {
+      parentId:
+        value !== ARTICLE_ALL_PARENT_CATEGORY ? value : undefined,
+      subId:
+        value !== ARTICLE_ALL_PARENT_CATEGORY
+          ? ARTICLE_ALL_SUBCATEGORY
+          : undefined,
+    });
+  }
+
+  function handleSubcategoryChange(value: string) {
+    setSubcategoryId(value);
+    if (parentCategoryId === ARTICLE_ALL_PARENT_CATEGORY) return;
+    loadList(1, { subId: value });
+  }
+
+  function handlePageChange(page: number) {
+    loadList(page);
   }
 
   function openCreate() {
@@ -94,8 +200,8 @@ export function ArticlesManager({
   function handleDuplicate(id: string) {
     void run(`duplicate:${id}`, async () => {
       try {
-        const duplicated = await duplicateArticleAction(id);
-        setArticles((prev) => [duplicated, ...prev]);
+        await duplicateArticleAction(id);
+        loadList(1);
         toast.success('Đã nhân bản bài viết');
       } catch {
         toast.error('Nhân bản thất bại');
@@ -108,7 +214,11 @@ export function ArticlesManager({
     setIsDeleting(true);
     try {
       await deleteArticleAction(articleToDelete.id);
-      setArticles((prev) => prev.filter((a) => a.id !== articleToDelete.id));
+      const nextTotal = result.total - 1;
+      const pages = totalPages(nextTotal, result.pageSize);
+      const nextPage = Math.min(result.page, pages);
+      const data = await listArticlesAction(buildListParams(nextPage));
+      setResult(data);
       toast.success('Đã xóa bài viết');
       setDeleteOpen(false);
       setArticleToDelete(null);
@@ -123,9 +233,12 @@ export function ArticlesManager({
     void run(`toggle:${id}`, async () => {
       try {
         await toggleArticleActiveAction(id, isActive);
-        setArticles((prev) =>
-          prev.map((a) => (a.id === id ? { ...a, isActive } : a)),
-        );
+        setResult((prev) => ({
+          ...prev,
+          items: prev.items.map((a) =>
+            a.id === id ? { ...a, isActive } : a,
+          ),
+        }));
         toast.success(isActive ? 'Đã bật bài viết' : 'Đã tắt bài viết');
       } catch {
         toast.error('Cập nhật thất bại');
@@ -149,29 +262,88 @@ export function ArticlesManager({
           </Button>
         </div>
 
-        <div className="flex gap-2">
-          <div className="relative max-w-sm flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              className="pl-9"
-              placeholder="Tìm theo tiêu đề hoặc slug..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+        <Card className="py-4">
+          <CardContent className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Eye className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">
+                Tổng lượt xem tất cả bài viết
+              </p>
+              <p className="text-2xl font-bold tabular-nums">
+                {formatNumber(totalViews, 'vi')}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+            <div className="relative min-w-[200px] flex-1 sm:max-w-sm">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="pl-9"
+                placeholder="Tìm theo tiêu đề hoặc slug..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                disabled={tableBusy}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleFilter();
+                }}
+              />
+            </div>
+            <Select
+              value={parentCategoryId}
+              onValueChange={handleParentCategoryChange}
               disabled={tableBusy}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleSearch();
-              }}
-            />
+            >
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Danh mục" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ARTICLE_ALL_PARENT_CATEGORY}>
+                  Tất cả danh mục
+                </SelectItem>
+                {parentOptions.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {hasSubcategoryFilter ? (
+              <Select
+                value={subcategoryId}
+                onValueChange={handleSubcategoryChange}
+                disabled={tableBusy}
+              >
+                <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectValue placeholder="Danh mục con" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ARTICLE_ALL_SUBCATEGORY}>
+                    Tất cả
+                  </SelectItem>
+                  {subcategoryOptions.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null}
+            <ManageLoadingButton
+              variant="secondary"
+              onClick={handleFilter}
+              isLoading={isPending('list')}
+              loadingLabel="Đang lọc..."
+              disabled={tableBusy && !isPending('list')}
+              className="sm:w-auto"
+            >
+              Lọc
+            </ManageLoadingButton>
           </div>
-          <ManageLoadingButton
-            variant="secondary"
-            onClick={handleSearch}
-            isLoading={isPending('search')}
-            loadingLabel="Đang tìm..."
-            disabled={tableBusy && !isPending('search')}
-          >
-            Tìm kiếm
-          </ManageLoadingButton>
         </div>
 
         <div className="relative rounded-lg border">
@@ -265,6 +437,14 @@ export function ArticlesManager({
             </TableBody>
           </Table>
         </div>
+
+        <ManagePagination
+          page={result.page}
+          total={result.total}
+          pageSize={result.pageSize}
+          onPageChange={handlePageChange}
+          disabled={tableBusy}
+        />
 
         <AlertDialog
           open={deleteOpen}

@@ -26,6 +26,7 @@ import type {
   ReviewCategory,
   ReviewSearchResult,
   ReviewSummary,
+  ReviewsCategoryContext,
   TrendingWindow,
 } from '@/types/review';
 import {
@@ -34,6 +35,7 @@ import {
   resolvePublicCategories,
   resolvePublishedArticles,
   resolvePublishedArticlesPaginated,
+  resolveReviewsCategoryContext,
   resolveSearchArticles,
   resolveSearchArticlesPaginated,
 } from './lib/resolve-published-reviews';
@@ -88,6 +90,18 @@ export async function getCategoryLabelAction(slug: string) {
 export const getCategoryLabelCached = unstable_cache(
   async (slug: string) => resolveCategoryLabel(slug),
   ['review-category-label'],
+  { revalidate: 120, tags: ['reviews'] },
+);
+
+export async function getReviewsCategoryContextAction(
+  categorySlug: string,
+): Promise<ReviewsCategoryContext | null> {
+  return resolveReviewsCategoryContext(categorySlug);
+}
+
+export const getReviewsCategoryContextCached = unstable_cache(
+  async (categorySlug: string) => resolveReviewsCategoryContext(categorySlug),
+  ['review-category-context-v2'],
   { revalidate: 120, tags: ['reviews'] },
 );
 
@@ -196,7 +210,7 @@ export const searchReviewsCached = unstable_cache(
 export const searchReviewsPaginatedCached = unstable_cache(
   async (rawQuery: string, categorySlug: string | undefined, page: number) =>
     searchReviewsPaginatedAction(rawQuery, { categorySlug, page }),
-  ['review-search-paginated-v1-db'],
+  ['review-search-paginated-v2-parent-all'],
   { revalidate: 60, tags: ['reviews'] },
 );
 
@@ -213,7 +227,7 @@ export const getReviewsListCached = unstable_cache(
 export const getReviewsListPaginatedCached = unstable_cache(
   async (categorySlug: string | undefined, page: number) =>
     getReviewsListPaginatedAction({ categorySlug, page }),
-  ['review-list-paginated-v1-db'],
+  ['review-list-paginated-v2-parent-all'],
   { revalidate: 120, tags: ['reviews'] },
 );
 

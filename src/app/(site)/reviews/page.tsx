@@ -6,13 +6,13 @@ import { AdBannerSlot } from '@/features/ad-banners/components/ad-banner-slot';
 import { ReviewsCategoryFilter } from '@/features/review/components/reviews-category-filter';
 import {
   getCategoryLabelCached,
-  getPublicCategoriesAction,
+  getReviewsCategoryContextCached,
   getReviewsListPaginatedCached,
   searchReviewsPaginatedCached,
 } from '@/features/review/actions';
 import { ReviewsInfiniteList } from '@/features/review/components/reviews-infinite-list';
 import { normalizeSearchQuery } from '@/lib/search/normalize-query';
-import { filterPublicCategories } from '@/lib/category/constants';
+import { resolveReviewsListCategorySlug } from '@/lib/reviews/resolve-list-category-slug';
 import {
   buildOpenGraphImages,
   getReviewsOpenGraphImage,
@@ -89,9 +89,8 @@ export async function generateMetadata({
 
   let heading = reviewT('allReviews');
   if (categorySlug) {
-    const categories = filterPublicCategories(await getPublicCategoriesAction());
-    const match = categories.find((c) => c.slug === categorySlug);
-    if (match) heading = match.name;
+    const label = await getCategoryLabelCached(categorySlug);
+    if (label) heading = label.name;
   }
 
   const pageTitle = `${heading} | ${siteT('siteName')}`;
@@ -124,12 +123,19 @@ export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
   const { category: categorySlug, q: rawQuery } = await searchParams;
   const searchQuery = normalizeSearchQuery(rawQuery ?? '') ?? undefined;
 
-  const [listResult, categories, categoryLabel, t, adBanners] =
-    await Promise.all([
+  const categoryContext =
+    categorySlug && !searchQuery
+      ? await getReviewsCategoryContextCached(categorySlug)
+      : null;
+  const listCategorySlug = resolveReviewsListCategorySlug(
+    categorySlug,
+    categoryContext,
+  );
+
+  const [listResult, categoryLabel, t, adBanners] = await Promise.all([
     searchQuery
-      ? searchReviewsPaginatedCached(searchQuery, categorySlug, 1)
-      : getReviewsListPaginatedCached(categorySlug, 1),
-    getPublicCategoriesAction(),
+      ? searchReviewsPaginatedCached(searchQuery, listCategorySlug, 1)
+      : getReviewsListPaginatedCached(listCategorySlug, 1),
     categorySlug ? getCategoryLabelCached(categorySlug) : Promise.resolve(null),
     getTranslations('Review'),
     getActiveAdBannersCached(),
@@ -139,18 +145,17 @@ export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
 
   const reviewsBanner = adBanners.reviews;
 
-  const publicCategories = filterPublicCategories(categories);
   const activeCategory = categoryLabel
     ? { slug: categoryLabel.slug, name: categoryLabel.name }
-    : categorySlug
-      ? publicCategories.find((c) => c.slug === categorySlug)
-      : undefined;
+    : undefined;
 
   const pageTitle = searchQuery
     ? t('searchResultsFor', { query: searchQuery })
-    : activeCategory
-      ? activeCategory.name
-      : t('allReviews');
+    : categoryContext && categoryContext.isParentAll
+      ? categoryContext.parent.name
+      : activeCategory
+        ? activeCategory.name
+        : t('allReviews');
 
   const emptyMessage = searchQuery
     ? t('noSearchResults')
@@ -173,8 +178,14 @@ export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
         <p className="mb-6 text-sm text-muted-foreground">{t('unknownCategory')}</p>
       ) : null}
 
-      {!searchQuery ? (
-        <ReviewsCategoryFilter categories={publicCategories} activeSlug={categorySlug} />
+      {!searchQuery && categoryContext && categoryContext.subcategories.length > 0 ? (
+        <ReviewsCategoryFilter
+          parentCategory={categoryContext.parent}
+          subcategories={categoryContext.subcategories}
+          activeSubSlug={
+            categoryContext.isParentAll ? undefined : categorySlug
+          }
+        />
       ) : null}
 
       {articles.length === 0 ? (
@@ -183,13 +194,13 @@ export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
         </p>
       ) : (
         <ReviewsInfiniteList
-          key={`${categorySlug ?? ''}-${searchQuery ?? ''}`}
+          key={`${listCategorySlug ?? ''}-${searchQuery ?? ''}`}
           initialItems={articles}
           initialPage={listResult.page}
           total={listResult.total}
           pageSize={listResult.pageSize}
           locale={locale}
-          categorySlug={categorySlug}
+          categorySlug={listCategorySlug}
           searchQuery={searchQuery}
           labels={{
             hotLabel: t('badgeHot'),

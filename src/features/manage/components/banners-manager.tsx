@@ -34,17 +34,19 @@ import {
 } from '@/features/manage/banners/actions';
 import { BannerFormDialog } from '@/features/manage/components/banner-form-dialog';
 import { ManageActionButton } from '@/features/manage/components/manage-action-button';
+import { ManagePagination } from '@/features/manage/components/manage-pagination';
 import { ManagePendingOverlay } from '@/features/manage/components/manage-pending-overlay';
 import { usePendingKeys } from '@/features/manage/hooks/use-pending-keys';
 import { AD_BANNER_PLACEMENT_LABELS } from '@/lib/ad-banners/constants';
+import { totalPages, type PaginatedResult } from '@/lib/pagination';
 import type { AdBanner } from '@/types/ad-banner';
 
 type BannersManagerProps = {
-  initialBanners: AdBanner[];
+  initialResult: PaginatedResult<AdBanner>;
 };
 
-export function BannersManager({ initialBanners }: BannersManagerProps) {
-  const [banners, setBanners] = useState(initialBanners);
+export function BannersManager({ initialResult }: BannersManagerProps) {
+  const [result, setResult] = useState(initialResult);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<AdBanner | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -54,17 +56,32 @@ export function BannersManager({ initialBanners }: BannersManagerProps) {
   const { run, isAnyPending } = usePendingKeys();
 
   const tableBusy = isAnyPending || isDeleting || isSaving;
+  const banners = result.items;
+
+  async function fetchPage(page: number) {
+    const data = await listBannersAction(page, result.pageSize);
+    setResult(data);
+  }
 
   async function refresh() {
     setIsSaving(true);
     try {
-      const data = await listBannersAction();
-      setBanners(data);
+      await fetchPage(result.page);
     } catch {
       toast.error('Không tải được danh sách banner');
     } finally {
       setIsSaving(false);
     }
+  }
+
+  function handlePageChange(page: number) {
+    void run('page', async () => {
+      try {
+        await fetchPage(page);
+      } catch {
+        toast.error('Không tải được danh sách banner');
+      }
+    });
   }
 
   function openCreate() {
@@ -90,7 +107,10 @@ export function BannersManager({ initialBanners }: BannersManagerProps) {
     setIsDeleting(true);
     try {
       await deleteBannerAction(bannerToDelete.id);
-      setBanners((prev) => prev.filter((b) => b.id !== bannerToDelete.id));
+      const nextTotal = result.total - 1;
+      const pages = totalPages(nextTotal, result.pageSize);
+      const nextPage = Math.min(result.page, pages);
+      await fetchPage(nextPage);
       toast.success('Đã xóa banner');
       setDeleteOpen(false);
       setBannerToDelete(null);
@@ -105,8 +125,7 @@ export function BannersManager({ initialBanners }: BannersManagerProps) {
     void run(`toggle:${id}`, async () => {
       try {
         await toggleBannerActiveAction(id, isActive);
-        const data = await listBannersAction();
-        setBanners(data);
+        await fetchPage(result.page);
         toast.success(isActive ? 'Đã bật banner' : 'Đã tắt banner');
       } catch {
         toast.error('Cập nhật thất bại');
@@ -215,6 +234,14 @@ export function BannersManager({ initialBanners }: BannersManagerProps) {
             </TableBody>
           </Table>
         </div>
+
+        <ManagePagination
+          page={result.page}
+          total={result.total}
+          pageSize={result.pageSize}
+          onPageChange={handlePageChange}
+          disabled={tableBusy}
+        />
 
         <BannerFormDialog
           open={dialogOpen}

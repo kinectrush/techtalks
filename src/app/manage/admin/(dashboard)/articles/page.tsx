@@ -1,18 +1,21 @@
 import { ArticlesManager } from '@/features/manage/components/articles-manager';
 import {
   getArticleFormOptionsAction,
+  getTotalArticleViewsAction,
   listArticlesAction,
 } from '@/features/manage/articles/actions';
 
 export default async function AdminArticlesPage() {
-  const [articles, options] = await Promise.all([
-    listArticlesAction(),
+  const [articlesResult, options, totalViews] = await Promise.all([
+    listArticlesAction({ page: 1 }),
     getArticleFormOptionsAction(),
+    getTotalArticleViewsAction(),
   ]);
 
   return (
     <ArticlesManager
-      initialArticles={articles}
+      initialResult={articlesResult}
+      totalViews={totalViews}
       categories={options.categories}
       authors={options.authors}
     />

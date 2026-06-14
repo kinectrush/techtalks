@@ -10,6 +10,7 @@ import {
   setAdminBannerActive,
   updateAdminBanner,
 } from '@/features/manage/banners/repository';
+import { DEFAULT_PAGE_SIZE } from '@/lib/pagination';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import type { AdBannerInput } from '@/types/ad-banner';
 
@@ -24,9 +25,9 @@ function revalidateBannerPaths() {
   revalidateTag('ad-banners', 'max');
 }
 
-export async function listBannersAction() {
+export async function listBannersAction(page = 1, pageSize = DEFAULT_PAGE_SIZE) {
   const supabase = await guard();
-  return listAdminBanners(supabase);
+  return listAdminBanners(supabase, page, pageSize);
 }
 
 export async function createBannerAction(input: AdBannerInput) {

@@ -66,6 +66,7 @@
     "affiliatePlatformOther": "cửa hàng",
     "allCategories": "Tất cả",
     "filterByCategory": "Lọc theo danh mục",
+    "filterBySubcategory": "Lọc theo danh mục con",
     "reviewsInCategory": "{name}",
     "unknownCategory": "Không tìm thấy danh mục này.",
     "noReviews": "Chưa có bài viết trong mục này.",

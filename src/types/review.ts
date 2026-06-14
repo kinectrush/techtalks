@@ -29,6 +29,16 @@ export type ReviewCategory = {
   name: string;
 };
 
+/** Parent category + subcategories for reviews list filter UI */
+export type ReviewsCategoryContext = {
+  parent: ReviewCategory;
+  subcategories: ReviewCategory[];
+  /** Slug from URL used for article filtering */
+  activeSlug: string;
+  /** Parent "all" view — includes articles not assigned to a subcategory */
+  isParentAll: boolean;
+};
+
 export type ReviewTag = {
   slug: string;
   name: string;

@@ -40,6 +40,7 @@ import {
 } from '@/features/manage/articles/actions';
 import {
   buildArticleFormDefaults,
+  type ArticleFormCategoryOption,
   type ArticleFormOption,
 } from '@/features/manage/articles/form-options';
 import {
@@ -53,7 +54,7 @@ import type { AdminArticleRow } from '@/types/admin';
 
 type ArticleEditorPageProps = {
   article: AdminArticleRow | null;
-  categories: ArticleFormOption[];
+  categories: ArticleFormCategoryOption[];
   authors: ArticleFormOption[];
   backHref?: string;
 };

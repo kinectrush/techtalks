@@ -8,12 +8,15 @@ import {
   deleteAdminArticle,
   duplicateAdminArticle,
   getAdminArticleById,
+  getTotalArticleViews,
   listAdminArticles,
+  listArticleFormCategories,
   listAuthors,
   listCategories,
   setAdminArticleActive,
   updateAdminArticle,
 } from '@/features/manage/articles/repository';
+import { DEFAULT_PAGE_SIZE } from '@/lib/pagination';
 import { notifyGoogleSitemapIfPublished } from '@/lib/seo/ping-google-sitemap';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import type { AdminArticleInput } from '@/types/admin';
@@ -23,9 +26,28 @@ async function guard() {
   return createSupabaseAdminClient();
 }
 
-export async function listArticlesAction(search?: string) {
+type ListArticlesOptions = {
+  search?: string;
+  parentCategoryId?: string;
+  subcategoryId?: string;
+  page?: number;
+  pageSize?: number;
+};
+
+export async function listArticlesAction(options: ListArticlesOptions = {}) {
   const supabase = await guard();
-  return listAdminArticles(supabase, search);
+  return listAdminArticles(supabase, {
+    search: options.search,
+    parentCategoryId: options.parentCategoryId,
+    subcategoryId: options.subcategoryId,
+    page: options.page ?? 1,
+    pageSize: options.pageSize ?? DEFAULT_PAGE_SIZE,
+  });
+}
+
+export async function getTotalArticleViewsAction() {
+  const supabase = await guard();
+  return getTotalArticleViews(supabase);
 }
 
 export async function getArticleAction(id: string) {
@@ -36,7 +58,7 @@ export async function getArticleAction(id: string) {
 export async function getArticleFormOptionsAction() {
   const supabase = await guard();
   const [categories, authors] = await Promise.all([
-    listCategories(supabase),
+    listArticleFormCategories(supabase),
     listAuthors(supabase),
   ]);
   return { categories, authors };

@@ -7,6 +7,7 @@ import type {
   ReviewArticle,
   ReviewCategory,
   ReviewSummary,
+  ReviewsCategoryContext,
 } from '@/types/review';
 
 import { getMockArticleContent } from '../data/mock-article-content';
@@ -27,6 +28,7 @@ import {
   fetchPublishedArticleBySlug,
   fetchPublishedArticles,
   fetchPublishedArticlesPaginated,
+  fetchReviewsCategoryContext,
   searchPublishedArticles,
   searchPublishedArticlesPaginated,
 } from './supabase-review-repository';
@@ -68,6 +70,19 @@ export async function resolveCategoryLabel(
   const categories = getMockCategories();
   const match = categories.find((category) => category.slug === slug);
   return match ? { slug: match.slug, name: match.name } : null;
+}
+
+export async function resolveReviewsCategoryContext(
+  categorySlug: string,
+): Promise<ReviewsCategoryContext | null> {
+  if (isSupabaseConfigured()) {
+    const supabase = createSupabasePublicClientIfConfigured();
+    if (supabase) {
+      return fetchReviewsCategoryContext(supabase, categorySlug);
+    }
+  }
+
+  return null;
 }
 
 export async function resolveSearchArticles(

@@ -66,6 +66,7 @@
     "affiliatePlatformOther": "store",
     "allCategories": "All",
     "filterByCategory": "Filter by category",
+    "filterBySubcategory": "Filter by subcategory",
     "reviewsInCategory": "{name}",
     "unknownCategory": "Category not found.",
     "noReviews": "No articles in this category yet.",

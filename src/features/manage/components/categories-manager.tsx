@@ -18,6 +18,7 @@ import {
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { CategoryFormDialog } from '@/features/manage/components/category-form-dialog';
 import { ManageActionButton } from '@/features/manage/components/manage-action-button';
+import { ManagePagination } from '@/features/manage/components/manage-pagination';
 import { ManagePendingOverlay } from '@/features/manage/components/manage-pending-overlay';
 import { usePendingKeys } from '@/features/manage/hooks/use-pending-keys';
 import {
@@ -25,6 +26,7 @@ import {
   toggleCategoryActiveAction,
   toggleCategoryHomepageFeaturedAction,
 } from '@/features/manage/categories/actions';
+import { paginateItems, DEFAULT_PAGE_SIZE } from '@/lib/pagination';
 import type { AdminCategory } from '@/types/admin';
 
 type CategoriesManagerProps = {
@@ -60,6 +62,7 @@ export function CategoriesManager({
   initialCategories,
 }: CategoriesManagerProps) {
   const [categories, setCategories] = useState(initialCategories);
+  const [page, setPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<AdminCategory | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -70,6 +73,11 @@ export function CategoriesManager({
   const sortedCategories = useMemo(
     () => sortCategories(categories),
     [categories],
+  );
+
+  const paginated = useMemo(
+    () => paginateItems(sortedCategories, page, DEFAULT_PAGE_SIZE),
+    [sortedCategories, page],
   );
 
   const parentOptions = useMemo(
@@ -85,6 +93,7 @@ export function CategoriesManager({
     try {
       const data = await listCategoriesAction();
       setCategories(data);
+      setPage(1);
     } catch {
       toast.error('Không tải được danh mục');
     } finally {
@@ -163,7 +172,7 @@ export function CategoriesManager({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedCategories.map((cat) => {
+              {paginated.items.map((cat) => {
                 const isSub = Boolean(cat.parentId);
                 return (
                   <TableRow key={cat.id}>
@@ -234,6 +243,14 @@ export function CategoriesManager({
             </TableBody>
           </Table>
         </div>
+
+        <ManagePagination
+          page={paginated.page}
+          total={paginated.total}
+          pageSize={paginated.pageSize}
+          onPageChange={setPage}
+          disabled={tableBusy}
+        />
 
         <CategoryFormDialog
           open={dialogOpen}

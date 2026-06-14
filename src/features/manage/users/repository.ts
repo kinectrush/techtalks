@@ -1,6 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { hashPassword } from '@/lib/manage/password';
+import {
+  DEFAULT_PAGE_SIZE,
+  paginateRange,
+  type PaginatedResult,
+} from '@/lib/pagination';
 import type { AdminUser, AdminUserInput } from '@/types/admin';
 
 function mapUser(row: {
@@ -27,16 +32,30 @@ function mapUser(row: {
   };
 }
 
-export async function listAdminUsers(supabase: SupabaseClient) {
-  const { data, error } = await supabase
+export async function listAdminUsers(
+  supabase: SupabaseClient,
+  page = 1,
+  pageSize = DEFAULT_PAGE_SIZE,
+): Promise<PaginatedResult<AdminUser>> {
+  const { from, to, page: safePage } = paginateRange(page, pageSize);
+
+  const { data, error, count } = await supabase
     .from('admin_users')
     .select(
       'id, username, display_name, email, is_active, role, last_login_at, created_at, updated_at',
+      { count: 'exact' },
     )
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .range(from, to);
 
   if (error) throw error;
-  return (data ?? []).map(mapUser);
+
+  return {
+    items: (data ?? []).map(mapUser),
+    total: count ?? 0,
+    page: safePage,
+    pageSize,
+  };
 }
 
 export async function createAdminUser(

@@ -14,6 +14,7 @@ import type {
   ReviewArticle,
   ReviewCategory,
   ReviewEngagement,
+  ReviewsCategoryContext,
 } from '@/types/review';
 
 import {
@@ -185,6 +186,26 @@ export type SearchPublishedArticlesPaginatedOptions = {
   pageSize?: number;
 };
 
+async function resolveParentAllCategoryIds(
+  supabase: SupabaseClient,
+  parentId: string,
+): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('is_active', true)
+    .or(`id.eq.${parentId},parent_id.eq.${parentId}`);
+
+  if (isMissingColumnError(error as PostgrestErrorLike)) {
+    return [parentId];
+  }
+
+  if (error) throw error;
+
+  const ids = (data ?? []).map((row) => row.id);
+  return ids.length ? ids : [parentId];
+}
+
 async function resolveCategoryFilterIds(
   supabase: SupabaseClient,
   categorySlug?: string,
@@ -213,30 +234,25 @@ async function resolveCategoryFilterIds(
     return [category.id];
   }
 
-  const { data: children, error: childrenError } = await supabase
-    .from('categories')
-    .select('id')
-    .eq('parent_id', category.id)
-    .eq('is_active', true);
-
-  if (childrenError) {
-    if (isMissingColumnError(childrenError as PostgrestErrorLike)) {
-      return [category.id];
-    }
-    throw childrenError;
-  }
-
-  const childIds = (children ?? []).map((row) => row.id);
-  return [category.id, ...childIds];
+  return resolveParentAllCategoryIds(supabase, category.id);
 }
 
-function applyCategoryFilter<T extends { eq: (col: string, val: string) => T; in: (col: string, vals: string[]) => T }>(
-  query: T,
-  categoryIds: string[] | null,
-): T {
+function applyCategoryFilter<
+  T extends {
+    eq: (col: string, val: string) => T;
+    or: (filters: string) => T;
+  },
+>(query: T, categoryIds: string[] | null): T {
   if (!categoryIds?.length) return query;
-  if (categoryIds.length === 1) return query.eq('category_id', categoryIds[0]!);
-  return query.in('category_id', categoryIds);
+
+  const uniqueIds = [...new Set(categoryIds)];
+  if (uniqueIds.length === 1) {
+    return query.eq('category_id', uniqueIds[0]!);
+  }
+
+  return query.or(
+    uniqueIds.map((id) => `category_id.eq.${id}`).join(','),
+  );
 }
 
 export async function fetchPublishedArticles(
@@ -563,6 +579,83 @@ export async function fetchActiveCategories(
 
   if (error) throw error;
   return filterPublicCategories((data ?? []) as ReviewCategory[]);
+}
+
+async function fetchActiveSubcategoriesByParentId(
+  supabase: SupabaseClient,
+  parentId: string,
+): Promise<ReviewCategory[]> {
+  const { data, error } = await supabase
+    .from('categories')
+    .select('slug, name')
+    .eq('parent_id', parentId)
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true });
+
+  if (isMissingColumnError(error as PostgrestErrorLike)) {
+    return [];
+  }
+
+  if (error) throw error;
+  return filterPublicCategories((data ?? []) as ReviewCategory[]);
+}
+
+export async function fetchReviewsCategoryContext(
+  supabase: SupabaseClient,
+  categorySlug: string,
+): Promise<ReviewsCategoryContext | null> {
+  if (
+    EXCLUDED_PUBLIC_CATEGORY_SLUGS.includes(
+      categorySlug as (typeof EXCLUDED_PUBLIC_CATEGORY_SLUGS)[number],
+    )
+  ) {
+    return null;
+  }
+
+  const { data: category, error } = await supabase
+    .from('categories')
+    .select('id, slug, name, parent_id, is_active')
+    .eq('slug', categorySlug)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!category?.is_active) return null;
+
+  if (category.parent_id) {
+    const { data: parent, error: parentError } = await supabase
+      .from('categories')
+      .select('id, slug, name')
+      .eq('id', category.parent_id)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (parentError) throw parentError;
+    if (!parent) return null;
+
+    const subcategories = await fetchActiveSubcategoriesByParentId(
+      supabase,
+      parent.id,
+    );
+
+    return {
+      parent: { slug: parent.slug, name: parent.name },
+      subcategories,
+      activeSlug: category.slug,
+      isParentAll: false,
+    };
+  }
+
+  const subcategories = await fetchActiveSubcategoriesByParentId(
+    supabase,
+    category.id,
+  );
+
+  return {
+    parent: { slug: category.slug, name: category.name },
+    subcategories,
+    activeSlug: category.slug,
+    isParentAll: true,
+  };
 }
 
 type FeaturedSubcategoryRow = {

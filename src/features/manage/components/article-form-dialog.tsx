@@ -40,6 +40,7 @@ import {
 } from '@/features/manage/articles/actions';
 import {
   buildArticleFormDefaults,
+  type ArticleFormCategoryOption,
   type ArticleFormOption,
 } from '@/features/manage/articles/form-options';
 import {
@@ -56,7 +57,7 @@ type ArticleFormDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   article: AdminArticleRow | null;
-  categories: ArticleFormOption[];
+  categories: ArticleFormCategoryOption[];
   authors: ArticleFormOption[];
   onSaved: () => void;
 };
@@ -98,7 +99,7 @@ export function ArticleFormDialog({
 
 type ArticleFormDialogBodyProps = {
   article: AdminArticleRow | null;
-  categories: ArticleFormOption[];
+  categories: ArticleFormCategoryOption[];
   authors: ArticleFormOption[];
   onOpenChange: (open: boolean) => void;
   onSaved: () => void;

@@ -4,8 +4,14 @@ import {
   mapDbArticleDetailBanner,
   toDbArticleDetailBanner,
 } from '@/lib/article-detail-banners';
+import {
+  DEFAULT_PAGE_SIZE,
+  paginateRange,
+  type PaginatedResult,
+} from '@/lib/pagination';
 import { slugify } from '@/lib/slug';
 import { reviewDetailPageUrl } from '@/lib/site-assets';
+import { ARTICLE_ALL_SUBCATEGORY } from '@/features/manage/articles/form-options';
 import type { ReviewEngagement } from '@/types/review';
 import type { AdminArticleInput, AdminArticleRow } from '@/types/admin';
 
@@ -169,24 +175,106 @@ const SELECT = `
   authors ( name )
 `;
 
+type ListAdminArticlesOptions = {
+  search?: string;
+  parentCategoryId?: string;
+  subcategoryId?: string;
+  page?: number;
+  pageSize?: number;
+};
+
+async function resolveAdminCategoryFilterIds(
+  supabase: SupabaseClient,
+  parentCategoryId?: string,
+  subcategoryId?: string,
+): Promise<string[] | null> {
+  if (!parentCategoryId) return null;
+
+  if (subcategoryId && subcategoryId !== ARTICLE_ALL_SUBCATEGORY) {
+    return [subcategoryId];
+  }
+
+  const { data, error } = await supabase
+    .from('categories')
+    .select('id')
+    .or(`id.eq.${parentCategoryId},parent_id.eq.${parentCategoryId}`);
+
+  if (error?.code === '42703') {
+    return [parentCategoryId];
+  }
+
+  if (error) throw error;
+
+  const ids = (data ?? []).map((row) => row.id);
+  return ids.length ? ids : [parentCategoryId];
+}
+
+function applyCategoryIdFilter<
+  T extends {
+    eq: (col: string, val: string) => T;
+    in: (col: string, vals: string[]) => T;
+  },
+>(query: T, categoryIds: string[] | null): T {
+  if (!categoryIds?.length) return query;
+
+  const uniqueIds = [...new Set(categoryIds)];
+  if (uniqueIds.length === 1) {
+    return query.eq('category_id', uniqueIds[0]!);
+  }
+
+  return query.in('category_id', uniqueIds);
+}
+
 export async function listAdminArticles(
   supabase: SupabaseClient,
-  search?: string,
-) {
+  options: ListAdminArticlesOptions = {},
+): Promise<PaginatedResult<AdminArticleRow>> {
+  const pageSize = options.pageSize ?? DEFAULT_PAGE_SIZE;
+  const { from, to, page } = paginateRange(options.page ?? 1, pageSize);
+
+  const categoryIds = await resolveAdminCategoryFilterIds(
+    supabase,
+    options.parentCategoryId,
+    options.subcategoryId,
+  );
+
   let query = supabase
     .from('review_articles')
-    .select(SELECT)
+    .select(SELECT, { count: 'exact' })
     .order('updated_at', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false });
 
-  if (search?.trim()) {
-    const term = search.trim().replace(/[%_]/g, '');
+  if (options.search?.trim()) {
+    const term = options.search.trim().replace(/[%_]/g, '');
     query = query.or(`title.ilike.%${term}%,slug.ilike.%${term}%`);
   }
 
-  const { data, error } = await query;
+  query = applyCategoryIdFilter(query, categoryIds);
+
+  const { data, error, count } = await query.range(from, to);
   if (error) throw error;
-  return ((data ?? []) as unknown as DbArticle[]).map(mapArticle);
+
+  return {
+    items: ((data ?? []) as unknown as DbArticle[]).map(mapArticle),
+    total: count ?? 0,
+    page,
+    pageSize,
+  };
+}
+
+export async function getTotalArticleViews(
+  supabase: SupabaseClient,
+): Promise<number> {
+  const { data, error } = await supabase
+    .from('review_articles')
+    .select('engagement');
+
+  if (error) throw error;
+
+  return (data ?? []).reduce((sum, row) => {
+    const engagement = row.engagement as ReviewEngagement | null | undefined;
+    return sum + (engagement?.views ?? 0);
+  }, 0);
 }
 
 export async function getAdminArticleById(
@@ -351,6 +439,36 @@ export async function setAdminArticleActive(
     .eq('id', id);
 
   if (error) throw error;
+}
+
+export async function listArticleFormCategories(supabase: SupabaseClient) {
+  const { data, error } = await supabase
+    .from('categories')
+    .select('id, slug, name, parent_id')
+    .order('sort_order', { ascending: true });
+
+  if (error?.code === '42703') {
+    const legacy = await supabase
+      .from('categories')
+      .select('id, slug, name')
+      .order('sort_order', { ascending: true });
+    if (legacy.error) throw legacy.error;
+    return (legacy.data ?? []).map((row) => ({
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      parentId: null as string | null,
+    }));
+  }
+
+  if (error) throw error;
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    parentId: row.parent_id as string | null,
+  }));
 }
 
 export async function listCategories(supabase: SupabaseClient) {

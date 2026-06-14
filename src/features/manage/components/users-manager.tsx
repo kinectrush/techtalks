@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/table';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ManageActionButton } from '@/features/manage/components/manage-action-button';
+import { ManagePagination } from '@/features/manage/components/manage-pagination';
 import { ManagePendingOverlay } from '@/features/manage/components/manage-pending-overlay';
 import { UserFormDialog } from '@/features/manage/components/user-form-dialog';
 import { usePendingKeys } from '@/features/manage/hooks/use-pending-keys';
@@ -24,44 +25,52 @@ import {
   listUsersAction,
   toggleUserActiveAction,
 } from '@/features/manage/users/actions';
+import { totalPages, type PaginatedResult } from '@/lib/pagination';
 import type { AdminUser } from '@/types/admin';
 
 type UsersManagerProps = {
-  initialUsers: AdminUser[];
+  initialResult: PaginatedResult<AdminUser>;
   currentUserId: string;
 };
 
 export function UsersManager({
-  initialUsers,
+  initialResult,
   currentUserId,
 }: UsersManagerProps) {
-  const [users, setUsers] = useState(initialUsers);
+  const [result, setResult] = useState(initialResult);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<AdminUser | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const { run, isAnyPending } = usePendingKeys();
 
   const tableBusy = isAnyPending || isSaving;
+  const users = result.items;
 
-  async function refresh() {
-    setIsSaving(true);
-    try {
-      const data = await listUsersAction();
-      setUsers(data);
-    } catch {
-      toast.error('Không tải được danh sách user');
-    } finally {
-      setIsSaving(false);
-    }
+  async function fetchPage(page: number) {
+    const data = await listUsersAction(page, result.pageSize);
+    setResult(data);
+  }
+
+  function handlePageChange(page: number) {
+    void run('page', async () => {
+      try {
+        await fetchPage(page);
+      } catch {
+        toast.error('Không tải được danh sách user');
+      }
+    });
   }
 
   function handleToggleActive(id: string, isActive: boolean) {
     void run(`toggle:${id}`, async () => {
       try {
         await toggleUserActiveAction(id, isActive);
-        setUsers((prev) =>
-          prev.map((u) => (u.id === id ? { ...u, isActive } : u)),
-        );
+        setResult((prev) => ({
+          ...prev,
+          items: prev.items.map((u) =>
+            u.id === id ? { ...u, isActive } : u,
+          ),
+        }));
         toast.success(isActive ? 'Đã bật user' : 'Đã tắt user');
       } catch (e) {
         toast.error(e instanceof Error ? e.message : 'Cập nhật thất bại');
@@ -103,46 +112,65 @@ export function UsersManager({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{user.username}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {user.displayName ?? user.email ?? '—'}
-                      </p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{user.role}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Switch
-                      checked={user.isActive}
-                      disabled={
-                        tableBusy ||
-                        (user.id === currentUserId && user.isActive)
-                      }
-                      onCheckedChange={(v) => handleToggleActive(user.id, v)}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <ManageActionButton
-                      label="Chỉnh sửa"
-                      disabled={tableBusy}
-                      onClick={() => {
-                        setEditing(user);
-                        setDialogOpen(true);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </ManageActionButton>
+              {users.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={4}
+                    className="text-center text-muted-foreground"
+                  >
+                    Chưa có user
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                users.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{user.username}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {user.displayName ?? user.email ?? '—'}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{user.role}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Switch
+                        checked={user.isActive}
+                        disabled={
+                          tableBusy ||
+                          (user.id === currentUserId && user.isActive)
+                        }
+                        onCheckedChange={(v) => handleToggleActive(user.id, v)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <ManageActionButton
+                        label="Chỉnh sửa"
+                        disabled={tableBusy}
+                        onClick={() => {
+                          setEditing(user);
+                          setDialogOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </ManageActionButton>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>
+
+        <ManagePagination
+          page={result.page}
+          total={result.total}
+          pageSize={result.pageSize}
+          onPageChange={handlePageChange}
+          disabled={tableBusy}
+        />
 
         <UserFormDialog
           open={dialogOpen}
@@ -151,7 +179,10 @@ export function UsersManager({
             setDialogOpen(open);
           }}
           user={editing}
-          onSaved={refresh}
+          onSaved={async () => {
+            const pages = totalPages(result.total + (editing ? 0 : 1), result.pageSize);
+            await fetchPage(editing ? result.page : pages);
+          }}
           onSavingChange={setIsSaving}
         />
       </div>
