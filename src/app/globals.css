@@ -296,6 +296,84 @@
   padding: 0.75rem 1rem;
 }
 
+/* Admin editor — visible cell borders for data entry */
+.rich-text-editor .article-comparison-table__wrapper {
+  width: 100%;
+  margin: 1rem 0;
+}
+
+.rich-text-editor .article-comparison-table--editor {
+  width: 100% !important;
+  min-width: 100% !important;
+  border-collapse: collapse !important;
+  table-layout: fixed;
+}
+
+.rich-text-editor .article-comparison-table--editor col {
+  width: 1% !important;
+}
+
+.rich-text-editor .article-comparison-table--editor th,
+.rich-text-editor .article-comparison-table--editor td {
+  border: 1px solid color-mix(in oklch, var(--foreground) 28%, transparent) !important;
+  padding: 0.5rem 0.75rem !important;
+  vertical-align: top;
+  word-break: break-word;
+}
+
+.rich-text-editor .article-comparison-table--editor th {
+  font-weight: 600;
+  background: color-mix(in oklch, var(--muted) 55%, transparent);
+}
+
+/* Fallback if TipTap renders without custom node view class */
+.rich-text-editor .tableWrapper {
+  width: 100%;
+  margin: 1rem 0;
+}
+
+.rich-text-editor .tableWrapper > table {
+  width: 100% !important;
+  min-width: 100% !important;
+  border-collapse: collapse !important;
+  table-layout: fixed;
+}
+
+.rich-text-editor .tableWrapper > table th,
+.rich-text-editor .tableWrapper > table td {
+  border: 1px solid color-mix(in oklch, var(--foreground) 28%, transparent) !important;
+  padding: 0.5rem 0.75rem !important;
+  vertical-align: top;
+  word-break: break-word;
+}
+
+.rich-text-editor .tableWrapper > table th {
+  font-weight: 600;
+  background: color-mix(in oklch, var(--muted) 55%, transparent);
+}
+
+/* Published article — full width, borderless comparison tables */
+.article-prose table.article-comparison-table {
+  width: 100% !important;
+  min-width: 100% !important;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  table-layout: fixed;
+  border: none;
+}
+
+.article-prose table.article-comparison-table th,
+.article-prose table.article-comparison-table td {
+  border: none;
+  padding: 0.5rem 0.75rem;
+  vertical-align: top;
+  word-break: break-word;
+}
+
+.article-prose table.article-comparison-table th {
+  font-weight: 600;
+}
+
 /* 404 page floating blobs */
 @keyframes not-found-float {
   0%,

@@ -4,6 +4,7 @@ import { mergeAttributes } from '@tiptap/core';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
+import { TableCell, TableHeader, TableRow } from '@tiptap/extension-table';
 import Underline from '@tiptap/extension-underline';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -25,6 +26,8 @@ import { useCallback, useRef, type ReactNode } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import { ComparisonTable } from '@/components/editor/extensions/comparison-table';
+import { TableEditorMenu } from '@/components/editor/table-editor-menu';
 import { EvaluationBox } from '@/components/editor/extensions/evaluation-box';
 import { uploadImageClient } from '@/lib/upload-client';
 import { cn } from '@/lib/utils';
@@ -122,6 +125,12 @@ export function RichTextEditor({
       Underline,
       Link.configure({ openOnClick: false }),
       LinkedImage.configure({ inline: false, allowBase64: false }),
+      TableRow,
+      TableHeader,
+      TableCell,
+      ComparisonTable.configure({
+        HTMLAttributes: { class: 'article-comparison-table' },
+      }),
       EvaluationBox,
       Placeholder.configure({ placeholder }),
     ],
@@ -175,7 +184,7 @@ export function RichTextEditor({
   return (
     <div
       className={cn(
-        'flex max-h-[70vh] flex-col overflow-hidden rounded-lg border bg-background',
+        'rich-text-editor flex max-h-[70vh] flex-col overflow-hidden rounded-lg border bg-background',
         className,
       )}
     >
@@ -236,6 +245,7 @@ export function RichTextEditor({
         >
           <Quote className="h-4 w-4" />
         </ToolbarButton>
+        <TableEditorMenu editor={editor} />
         <ToolbarButton
           title="Chèn bảng điểm"
           active={editor.isActive('evaluationBox')}

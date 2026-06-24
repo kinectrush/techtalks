@@ -15,6 +15,8 @@ const EVAL_BOX_CLASSES = [
 /** Editor-only; strip from published HTML if present. */
 const EDITOR_ONLY_CLASSES = new Set(['article-eval-box--editor', 'article-eval-box__row--editor']);
 
+const TABLE_CLASSES = ['article-comparison-table'] as const;
+
 const ALLOWED_TAGS = [
   'p',
   'h2',
@@ -35,6 +37,12 @@ const ALLOWED_TAGS = [
   'hr',
   'div',
   'span',
+  'table',
+  'thead',
+  'tbody',
+  'tr',
+  'th',
+  'td',
 ];
 
 const ALLOWED_ATTR: Record<string, string[]> = {
@@ -52,11 +60,18 @@ const ALLOWED_ATTR: Record<string, string[]> = {
   figcaption: ['class'],
   div: ['class', 'data-type'],
   span: ['class'],
+  table: ['class'],
+  thead: ['class'],
+  tbody: ['class'],
+  tr: ['class'],
+  th: ['class', 'colspan', 'rowspan'],
+  td: ['class', 'colspan', 'rowspan'],
 };
 
 const ALLOWED_CLASSES: Record<string, string[]> = {
   div: [...EVAL_BOX_CLASSES],
   span: [...EVAL_BOX_CLASSES],
+  table: [...TABLE_CLASSES],
 };
 
 /** Sanitize Tiptap HTML before rendering on the public site (Node-safe, no jsdom). */
