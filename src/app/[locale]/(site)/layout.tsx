@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { getLocale, getTranslations } from 'next-intl/server';
 
+import { GoogleAnalytics } from '@/components/common/google-analytics';
 import { SiteFooter } from '@/components/layout/site-footer';
 import { SiteHeader } from '@/components/layout/site-header';
 import { getFeaturedMatchTickerCached } from '@/features/review/actions';
@@ -30,6 +31,7 @@ export default async function SiteLayout({ children }: SiteLayoutProps) {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <GoogleAnalytics />
       <SiteHeader />
       {tickerMatches.length ? (
         <div className="sticky top-14 z-40 lg:top-16">
