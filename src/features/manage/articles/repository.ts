@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-
+import { ARTICLE_ALL_SUBCATEGORY } from '@/features/manage/articles/form-options';
 import {
   mapDbArticleDetailBanner,
   toDbArticleDetailBanner,
@@ -9,11 +9,10 @@ import {
   paginateRange,
   type PaginatedResult,
 } from '@/lib/pagination';
-import { slugify } from '@/lib/slug';
 import { reviewDetailPageUrl } from '@/lib/site-assets';
-import { ARTICLE_ALL_SUBCATEGORY } from '@/features/manage/articles/form-options';
-import type { ReviewEngagement } from '@/types/review';
+import { slugify } from '@/lib/slug';
 import type { AdminArticleInput, AdminArticleRow } from '@/types/admin';
+import type { ReviewEngagement } from '@/types/review';
 
 const DUPLICATE_TITLE_PREFIX = '(copy) ';
 
@@ -63,7 +62,8 @@ function pickName(
 
 function mapArticle(row: DbArticle): AdminArticleRow {
   const affiliateUrl =
-    row.affiliate_links?.[0]?.url && typeof row.affiliate_links[0].url === 'string'
+    row.affiliate_links?.[0]?.url &&
+    typeof row.affiliate_links[0].url === 'string'
       ? row.affiliate_links[0].url
       : null;
   return {
@@ -121,7 +121,13 @@ function toDbPayload(input: AdminArticleInput, partial = false) {
     og_image: input.ogImage ?? null,
     canonical_url: input.canonicalUrl ?? null,
     affiliate_links: input.affiliateUrl?.trim()
-      ? [{ platform: 'other', url: input.affiliateUrl.trim(), label: 'Affiliate' }]
+      ? [
+          {
+            platform: 'other',
+            url: input.affiliateUrl.trim(),
+            label: 'Affiliate',
+          },
+        ]
       : [],
     category_id: input.categoryId,
     author_id: input.authorId,
@@ -179,6 +185,7 @@ type ListAdminArticlesOptions = {
   search?: string;
   parentCategoryId?: string;
   subcategoryId?: string;
+  viewsSort?: 'asc' | 'desc';
   page?: number;
   pageSize?: number;
 };
@@ -231,6 +238,7 @@ export async function listAdminArticles(
 ): Promise<PaginatedResult<AdminArticleRow>> {
   const pageSize = options.pageSize ?? DEFAULT_PAGE_SIZE;
   const { from, to, page } = paginateRange(options.page ?? 1, pageSize);
+  const hasViewsSort = Boolean(options.viewsSort);
 
   const categoryIds = await resolveAdminCategoryFilterIds(
     supabase,
@@ -251,8 +259,36 @@ export async function listAdminArticles(
 
   query = applyCategoryIdFilter(query, categoryIds);
 
-  const { data, error, count } = await query.range(from, to);
+  const { data, error, count } = await (hasViewsSort
+    ? query
+    : query.range(from, to));
   if (error) throw error;
+
+  if (hasViewsSort) {
+    const sortedItems = ((data ?? []) as unknown as DbArticle[])
+      .map(mapArticle)
+      .sort((a, b) => {
+        const viewDiff =
+          options.viewsSort === 'asc' ? a.views - b.views : b.views - a.views;
+        if (viewDiff !== 0) return viewDiff;
+
+        const updatedDiff =
+          new Date(b.updatedAt ?? b.createdAt).getTime() -
+          new Date(a.updatedAt ?? a.createdAt).getTime();
+        if (updatedDiff !== 0) return updatedDiff;
+
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+      });
+
+    return {
+      items: sortedItems.slice(from, to + 1),
+      total: count ?? 0,
+      page,
+      pageSize,
+    };
+  }
 
   return {
     items: ((data ?? []) as unknown as DbArticle[]).map(mapArticle),
@@ -309,9 +345,7 @@ export async function createAdminArticle(
   input: AdminArticleInput,
 ) {
   const editorPickExists = await hasEditorPickArticle(supabase);
-  const payload = editorPickExists
-    ? input
-    : { ...input, isEditorPick: true };
+  const payload = editorPickExists ? input : { ...input, isEditorPick: true };
 
   const { data, error } = await supabase
     .from('review_articles')
@@ -358,8 +392,7 @@ async function uniqueSlugForDuplicate(
   source: AdminArticleRow,
   duplicateTitle: string,
 ): Promise<string> {
-  const base =
-    slugify(duplicateTitle) || `${source.slug}-copy`.slice(0, 120);
+  const base = slugify(duplicateTitle) || `${source.slug}-copy`.slice(0, 120);
   if (!(await isSlugTaken(supabase, base))) return base;
 
   for (let n = 2; n < 1000; n++) {
@@ -389,7 +422,8 @@ export async function duplicateAdminArticle(
     content: source.content ?? undefined,
     coverImage: source.coverImage,
     editorPickCoverImageMobile: source.editorPickCoverImageMobile ?? undefined,
-    editorPickCoverImageDesktop: source.editorPickCoverImageDesktop ?? undefined,
+    editorPickCoverImageDesktop:
+      source.editorPickCoverImageDesktop ?? undefined,
     ogImage: source.coverImage,
     canonicalUrl: reviewDetailPageUrl(slug),
     affiliateUrl: source.affiliateUrl ?? undefined,
@@ -413,10 +447,7 @@ export async function duplicateAdminArticle(
   return createAdminArticle(supabase, input);
 }
 
-export async function deleteAdminArticle(
-  supabase: SupabaseClient,
-  id: string,
-) {
+export async function deleteAdminArticle(supabase: SupabaseClient, id: string) {
   const { error } = await supabase
     .from('review_articles')
     .delete()

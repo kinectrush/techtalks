@@ -1,8 +1,6 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-
-import { requireAdminUserAction } from '@/features/manage/auth/actions';
 import {
   createAdminArticle,
   deleteAdminArticle,
@@ -16,6 +14,7 @@ import {
   setAdminArticleActive,
   updateAdminArticle,
 } from '@/features/manage/articles/repository';
+import { requireAdminUserAction } from '@/features/manage/auth/actions';
 import { DEFAULT_PAGE_SIZE } from '@/lib/pagination';
 import { notifyGoogleSitemapIfPublished } from '@/lib/seo/ping-google-sitemap';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
@@ -30,6 +29,7 @@ type ListArticlesOptions = {
   search?: string;
   parentCategoryId?: string;
   subcategoryId?: string;
+  viewsSort?: 'asc' | 'desc';
   page?: number;
   pageSize?: number;
 };
@@ -40,6 +40,7 @@ export async function listArticlesAction(options: ListArticlesOptions = {}) {
     search: options.search,
     parentCategoryId: options.parentCategoryId,
     subcategoryId: options.subcategoryId,
+    viewsSort: options.viewsSort,
     page: options.page ?? 1,
     pageSize: options.pageSize ?? DEFAULT_PAGE_SIZE,
   });
@@ -73,7 +74,10 @@ export async function createArticleAction(input: AdminArticleInput) {
   return article;
 }
 
-export async function updateArticleAction(id: string, input: AdminArticleInput) {
+export async function updateArticleAction(
+  id: string,
+  input: AdminArticleInput,
+) {
   const supabase = await guard();
   const article = await updateAdminArticle(supabase, id, input);
   revalidatePath('/manage/admin/articles');

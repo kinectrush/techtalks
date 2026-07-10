@@ -1,10 +1,20 @@
 'use client';
 
-import { Copy, Eye, Pencil, Plus, Search, ThumbsUp, Trash2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Copy,
+  Eye,
+  Pencil,
+  Plus,
+  Search,
+  ThumbsUp,
+  Trash2,
+} from 'lucide-react';
 import { toast } from 'sonner';
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,18 +45,18 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { TooltipProvider } from '@/components/ui/tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import {
   deleteArticleAction,
   duplicateArticleAction,
   listArticlesAction,
   toggleArticleActiveAction,
 } from '@/features/manage/articles/actions';
-import { ManageActionButton } from '@/features/manage/components/manage-action-button';
-import { ManageLoadingButton } from '@/features/manage/components/manage-loading-button';
-import { ManagePagination } from '@/features/manage/components/manage-pagination';
-import { ManagePendingOverlay } from '@/features/manage/components/manage-pending-overlay';
-import { usePendingKeys } from '@/features/manage/hooks/use-pending-keys';
 import type {
   ArticleFormCategoryOption,
   ArticleFormOption,
@@ -57,6 +67,11 @@ import {
   getParentCategories,
   getSubcategoriesForParent,
 } from '@/features/manage/articles/form-options';
+import { ManageActionButton } from '@/features/manage/components/manage-action-button';
+import { ManageLoadingButton } from '@/features/manage/components/manage-loading-button';
+import { ManagePagination } from '@/features/manage/components/manage-pagination';
+import { ManagePendingOverlay } from '@/features/manage/components/manage-pending-overlay';
+import { usePendingKeys } from '@/features/manage/hooks/use-pending-keys';
 import { formatNumber } from '@/lib/format';
 import { totalPages, type PaginatedResult } from '@/lib/pagination';
 import type { AdminArticleRow } from '@/types/admin';
@@ -67,6 +82,8 @@ type ArticlesManagerProps = {
   categories: ArticleFormCategoryOption[];
   authors: ArticleFormOption[];
 };
+
+type ViewsSort = 'asc' | 'desc' | null;
 
 export function ArticlesManager({
   initialResult,
@@ -80,12 +97,12 @@ export function ArticlesManager({
     ARTICLE_ALL_PARENT_CATEGORY,
   );
   const [subcategoryId, setSubcategoryId] = useState(ARTICLE_ALL_SUBCATEGORY);
+  const [viewsSort, setViewsSort] = useState<ViewsSort>(null);
   const prevParentRef = useRef(parentCategoryId);
   const { run, isPending, isAnyPending } = usePendingKeys();
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [articleToDelete, setArticleToDelete] = useState<AdminArticleRow | null>(
-    null,
-  );
+  const [articleToDelete, setArticleToDelete] =
+    useState<AdminArticleRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const tableBusy = isAnyPending || isDeleting;
@@ -109,6 +126,7 @@ export function ArticlesManager({
       parentId?: string;
       subId?: string;
       searchTerm?: string;
+      viewsSort?: ViewsSort;
     },
   ) {
     const parent =
@@ -116,14 +134,15 @@ export function ArticlesManager({
       (parentCategoryId !== ARTICLE_ALL_PARENT_CATEGORY
         ? parentCategoryId
         : undefined);
-    const sub =
-      overrides?.subId ??
-      (parent ? subcategoryId : undefined);
+    const sub = overrides?.subId ?? (parent ? subcategoryId : undefined);
+    const sort =
+      overrides && 'viewsSort' in overrides ? overrides.viewsSort : viewsSort;
 
     return {
       search: (overrides?.searchTerm ?? search) || undefined,
       parentCategoryId: parent,
       subcategoryId: sub,
+      viewsSort: sort ?? undefined,
       page,
       pageSize: result.pageSize,
     };
@@ -135,6 +154,7 @@ export function ArticlesManager({
       parentId?: string;
       subId?: string;
       searchTerm?: string;
+      viewsSort?: ViewsSort;
     },
   ) {
     void run('list', async () => {
@@ -162,8 +182,7 @@ export function ArticlesManager({
     setSubcategoryId(ARTICLE_ALL_SUBCATEGORY);
     prevParentRef.current = value;
     loadList(1, {
-      parentId:
-        value !== ARTICLE_ALL_PARENT_CATEGORY ? value : undefined,
+      parentId: value !== ARTICLE_ALL_PARENT_CATEGORY ? value : undefined,
       subId:
         value !== ARTICLE_ALL_PARENT_CATEGORY
           ? ARTICLE_ALL_SUBCATEGORY
@@ -180,6 +199,27 @@ export function ArticlesManager({
   function handlePageChange(page: number) {
     loadList(page);
   }
+
+  function handleViewsSortToggle() {
+    const nextSort: ViewsSort =
+      viewsSort === null ? 'desc' : viewsSort === 'desc' ? 'asc' : null;
+
+    setViewsSort(nextSort);
+    loadList(1, { viewsSort: nextSort });
+  }
+
+  const ViewsSortIcon =
+    viewsSort === 'desc'
+      ? ArrowDown
+      : viewsSort === 'asc'
+        ? ArrowUp
+        : ArrowUpDown;
+  const viewsSortLabel =
+    viewsSort === 'desc'
+      ? 'Sắp xếp lượt xem giảm dần'
+      : viewsSort === 'asc'
+        ? 'Sắp xếp lượt xem tăng dần'
+        : 'Không sắp xếp lượt xem';
 
   function openCreate() {
     if (tableBusy) return;
@@ -235,9 +275,7 @@ export function ArticlesManager({
         await toggleArticleActiveAction(id, isActive);
         setResult((prev) => ({
           ...prev,
-          items: prev.items.map((a) =>
-            a.id === id ? { ...a, isActive } : a,
-          ),
+          items: prev.items.map((a) => (a.id === id ? { ...a, isActive } : a)),
         }));
         toast.success(isActive ? 'Đã bật bài viết' : 'Đã tắt bài viết');
       } catch {
@@ -352,7 +390,29 @@ export function ArticlesManager({
             <TableHeader>
               <TableRow>
                 <TableHead>Tiêu đề</TableHead>
-                <TableHead className="text-right">Lượt xem</TableHead>
+                <TableHead className="text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    <span>Lượt xem</span>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant={viewsSort ? 'secondary' : 'ghost'}
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={handleViewsSortToggle}
+                          disabled={tableBusy}
+                          aria-label={viewsSortLabel}
+                        >
+                          <ViewsSortIcon className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        {viewsSortLabel}
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </TableHead>
                 <TableHead className="text-right">Like</TableHead>
                 <TableHead>Trạng thái</TableHead>
                 <TableHead>Active</TableHead>
@@ -456,27 +516,27 @@ export function ArticlesManager({
         >
           <AlertDialogContent>
             <div className="relative">
-            <ManagePendingOverlay show={isDeleting} />
-            <AlertDialogHeader>
-              <AlertDialogTitle>Xóa bài viết?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Bạn có chắc muốn xóa &ldquo;{articleToDelete?.title}&rdquo;?
-                Hành động này không thể hoàn tác.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeleting}>Hủy</AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                disabled={isDeleting}
-                onClick={(e) => {
-                  e.preventDefault();
-                  void confirmDelete();
-                }}
-              >
-                {isDeleting ? 'Đang xóa...' : 'Xóa'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
+              <ManagePendingOverlay show={isDeleting} />
+              <AlertDialogHeader>
+                <AlertDialogTitle>Xóa bài viết?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Bạn có chắc muốn xóa &ldquo;{articleToDelete?.title}&rdquo;?
+                  Hành động này không thể hoàn tác.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isDeleting}>Hủy</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  disabled={isDeleting}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    void confirmDelete();
+                  }}
+                >
+                  {isDeleting ? 'Đang xóa...' : 'Xóa'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
             </div>
           </AlertDialogContent>
         </AlertDialog>
