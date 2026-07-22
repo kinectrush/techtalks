@@ -10,12 +10,7 @@ import {
   normalizeSearchQuery,
 } from '@/lib/search/normalize-query';
 import type { PaginatedResponse } from '@/types/api';
-import type { FeaturedMatchTicker } from '@/types/world-cup';
-import {
-  enrichHomePageWithWorldCupData,
-  resolveFeaturedMatchTicker,
-  stripWorldCupLiveData,
-} from '@/lib/world-cup/enrich-with-live-data';
+import { stripWorldCupLiveData } from '@/lib/world-cup/enrich-with-live-data';
 
 import {
   getHomePageData,
@@ -60,27 +55,13 @@ async function resolveHomePageData(): Promise<HomePageData> {
     data = getHomePageData();
   }
 
-  try {
-    return await enrichHomePageWithWorldCupData(data);
-  } catch (error) {
-    console.error('[review-home] world-cup enrichment failed', error);
-    return stripWorldCupLiveData(data);
-  }
+  return stripWorldCupLiveData(data);
 }
 
 export const getHomePageDataCached = unstable_cache(
   async (): Promise<HomePageData> => resolveHomePageData(),
-  ['review-home-v6-football-data'],
-  { revalidate: 120, tags: ['reviews', 'trending', 'world-cup'] },
-);
-
-export const getFeaturedMatchTickerCached = unstable_cache(
-  async (): Promise<FeaturedMatchTicker> => {
-    const data = await resolveHomePageData();
-    return resolveFeaturedMatchTicker(data);
-  },
-  ['featured-match-ticker-v3-football-data'],
-  { revalidate: 120, tags: ['reviews', 'trending', 'world-cup'] },
+  ['review-home-v7-world-cup-live-disabled'],
+  { revalidate: 120, tags: ['reviews', 'trending'] },
 );
 
 export async function getCategoryLabelAction(slug: string) {

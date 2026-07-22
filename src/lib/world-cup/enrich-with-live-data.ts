@@ -1,6 +1,6 @@
 import { unstable_cache } from 'next/cache';
 
-import { fetchWorldCupLiveData } from '@/lib/football-data/fetch-world-cup';
+import type { WorldCupLiveData } from '@/lib/football-data/types';
 import type { FeaturedSubcategory, HomePageData } from '@/types/review';
 import type {
   FeaturedMatchTicker,
@@ -8,9 +8,9 @@ import type {
 } from '@/types/world-cup';
 
 export const getWorldCupLiveDataCached = unstable_cache(
-  async () => fetchWorldCupLiveData(),
-  ['world-cup-football-data-v3'],
-  { revalidate: 120, tags: ['world-cup'] },
+  async (): Promise<WorldCupLiveData | null> => null,
+  ['world-cup-live-disabled'],
+  { revalidate: false },
 );
 
 function emptyHomepageConfig(): SubcategoryHomepageConfig {
@@ -18,7 +18,7 @@ function emptyHomepageConfig(): SubcategoryHomepageConfig {
 }
 
 function applyLiveDataToConfig(
-  live: NonNullable<Awaited<ReturnType<typeof fetchWorldCupLiveData>>>,
+  live: WorldCupLiveData,
 ): SubcategoryHomepageConfig {
   return {
     matches: live.matches,
@@ -38,7 +38,7 @@ export function stripWorldCupLiveData(data: HomePageData): HomePageData {
 
 function enrichFeaturedSubcategories(
   featured: FeaturedSubcategory[],
-  live: NonNullable<Awaited<ReturnType<typeof fetchWorldCupLiveData>>>,
+  live: WorldCupLiveData,
 ): FeaturedSubcategory[] {
   return featured.map((item) => ({
     ...item,

@@ -177,7 +177,7 @@ function ArticleEditorForm({
         >
           <ManagePendingOverlay show={isSaving} />
 
-          <div className="border-b px-6 py-4">
+          <div className="border-b px-4 py-4 sm:px-6">
             <ArticleCategoryAuthorFields
               categories={categories}
               authors={authors}
@@ -187,7 +187,7 @@ function ArticleEditorForm({
           </div>
 
           <Tabs defaultValue="basic" className="flex min-h-0 flex-1 flex-col">
-            <TabsList className="w-full justify-start rounded-none border-b bg-muted/20 px-4">
+            <TabsList className="w-full justify-start overflow-x-auto rounded-none border-b bg-muted/20 px-2 sm:px-4">
               <TabsTrigger value="basic">Cơ bản</TabsTrigger>
               <TabsTrigger value="content">Nội dung</TabsTrigger>
               <TabsTrigger value="media">Ảnh</TabsTrigger>
@@ -196,7 +196,7 @@ function ArticleEditorForm({
               <TabsTrigger value="settings">Cài đặt</TabsTrigger>
             </TabsList>
 
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <TabsContent
                 forceMount
                 value="basic"

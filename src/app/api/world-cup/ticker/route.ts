@@ -1,11 +1,8 @@
-import { fetchWorldCupLiveData } from '@/lib/football-data/fetch-world-cup';
-
-export const dynamic = 'force-dynamic';
+import { NextResponse } from 'next/server';
 
 export async function GET() {
-  const data = await fetchWorldCupLiveData({ fresh: true });
-
-  return Response.json({
-    matches: data?.matches ?? [],
-  });
+  return NextResponse.json(
+    { matches: [], groupStandings: [], disabled: true },
+    { status: 410 },
+  );
 }
