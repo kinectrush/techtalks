@@ -1,5 +1,8 @@
 'use client';
 
+import { useState } from 'react';
+import Link, { useLinkStatus } from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   FileText,
   FolderTree,
@@ -11,13 +14,8 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
 import { toast } from 'sonner';
-
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import {
   ADMIN_ARTICLES_PATH,
   ADMIN_BANNERS_PATH,
@@ -26,6 +24,7 @@ import {
   ADMIN_MESSAGES_PATH,
   ADMIN_USERS_PATH,
 } from '@/lib/manage/constants';
+import { cn } from '@/lib/utils';
 import type { AdminUser } from '@/types/admin';
 
 const nav = [
@@ -39,6 +38,14 @@ const nav = [
 type AdminSidebarProps = {
   user: AdminUser;
 };
+
+function NavLinkStatus() {
+  const { pending } = useLinkStatus();
+
+  return pending ? (
+    <Loader2 className="ml-auto h-4 w-4 animate-spin" aria-hidden="true" />
+  ) : null;
+}
 
 export function AdminSidebar({ user }: AdminSidebarProps) {
   const pathname = usePathname();
@@ -56,7 +63,6 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
       router.refresh();
     } catch {
       toast.error('Không thể đăng xuất');
-    } finally {
       setIsLoggingOut(false);
     }
   }
@@ -137,6 +143,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
               >
                 <Icon className="h-4 w-4" />
                 {item.label}
+                <NavLinkStatus />
               </Link>
             );
           })}

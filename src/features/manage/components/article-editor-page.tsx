@@ -1,19 +1,14 @@
 'use client';
 
+import { useEffect, useMemo, useState, useTransition } from 'react';
+import { FormProvider, useForm, type FieldErrors } from 'react-hook-form';
+import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import {
-  FormProvider,
-  useForm,
-  type FieldErrors,
-} from 'react-hook-form';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-
+import { RichTextEditor } from '@/components/editor/rich-text-editor';
+import { ImageUploadField } from '@/components/forms/image-upload-field';
 import { Button } from '@/components/ui/button';
-import { ManageLoadingButton } from '@/features/manage/components/manage-loading-button';
-import { ManagePendingOverlay } from '@/features/manage/components/manage-pending-overlay';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -26,14 +21,6 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { RichTextEditor } from '@/components/editor/rich-text-editor';
-import { ImageUploadField } from '@/components/forms/image-upload-field';
-import { ArticleCategoryAuthorFields } from '@/features/manage/components/article-category-author-fields';
-import {
-  adminArticleSchema,
-  formValuesToArticleInput,
-  type AdminArticleFormValues,
-} from '@/features/manage/articles/schema';
 import {
   createArticleAction,
   updateArticleAction,
@@ -44,11 +31,19 @@ import {
   type ArticleFormOption,
 } from '@/features/manage/articles/form-options';
 import {
+  adminArticleSchema,
+  formValuesToArticleInput,
+  type AdminArticleFormValues,
+} from '@/features/manage/articles/schema';
+import { ArticleCategoryAuthorFields } from '@/features/manage/components/article-category-author-fields';
+import { ManageLoadingButton } from '@/features/manage/components/manage-loading-button';
+import { ManagePendingOverlay } from '@/features/manage/components/manage-pending-overlay';
+import {
   ARTICLE_DETAIL_BANNER_DESKTOP_ASPECT,
   ARTICLE_DETAIL_BANNER_MOBILE_ASPECT,
 } from '@/lib/ad-banners/constants';
-import { slugify } from '@/lib/slug';
 import { reviewDetailPageUrl } from '@/lib/site-assets';
+import { slugify } from '@/lib/slug';
 import { cn } from '@/lib/utils';
 import type { AdminArticleRow } from '@/types/admin';
 
@@ -73,6 +68,7 @@ function ArticleEditorForm({
 }: ArticleEditorPageProps) {
   const router = useRouter();
   const [slugTouched, setSlugTouched] = useState(false);
+  const [isNavigating, startNavigation] = useTransition();
   const isEdit = Boolean(article);
 
   const defaultValues = useMemo(
@@ -117,14 +113,13 @@ function ArticleEditorForm({
         await createArticleAction(input);
         toast.success('Đã tạo bài viết');
       }
-      router.push(backHref);
-      router.refresh();
+      startNavigation(() => router.push(backHref));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Lưu thất bại');
     }
   }
 
-  const isSaving = formState.isSubmitting;
+  const isSaving = formState.isSubmitting || isNavigating;
 
   return (
     <div className="space-y-6">
@@ -135,7 +130,7 @@ function ArticleEditorForm({
             variant="ghost"
             className="-ml-2"
             disabled={isSaving}
-            onClick={() => router.push(backHref)}
+            onClick={() => startNavigation(() => router.push(backHref))}
           >
             <ArrowLeft className="h-4 w-4" />
             Quay lại
@@ -210,7 +205,9 @@ function ArticleEditorForm({
                   <Label htmlFor="slug">Slug (URL) *</Label>
                   <Input
                     id="slug"
-                    {...register('slug', { onChange: () => setSlugTouched(true) })}
+                    {...register('slug', {
+                      onChange: () => setSlugTouched(true),
+                    })}
                   />
                 </div>
                 <div className="space-y-2">
@@ -247,7 +244,9 @@ function ArticleEditorForm({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="tagsText">Tags (phân cách bằng dấu phẩy)</Label>
+                  <Label htmlFor="tagsText">
+                    Tags (phân cách bằng dấu phẩy)
+                  </Label>
                   <Input id="tagsText" {...register('tagsText')} />
                 </div>
               </TabsContent>
@@ -361,7 +360,9 @@ function ArticleEditorForm({
                   </div>
                   <div className="flex items-center justify-between rounded-lg border p-3">
                     <div>
-                      <p className="text-sm font-medium">Hiển thị banner desktop</p>
+                      <p className="text-sm font-medium">
+                        Hiển thị banner desktop
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         Cần có ảnh và bật active
                       </p>
@@ -406,7 +407,9 @@ function ArticleEditorForm({
                   </div>
                   <div className="flex items-center justify-between rounded-lg border p-3">
                     <div>
-                      <p className="text-sm font-medium">Hiển thị banner mobile</p>
+                      <p className="text-sm font-medium">
+                        Hiển thị banner mobile
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         Cần có ảnh và bật active
                       </p>
@@ -441,7 +444,10 @@ function ArticleEditorForm({
                     <Select
                       value={watch('status')}
                       onValueChange={(v) =>
-                        setValue('status', v as AdminArticleFormValues['status'])
+                        setValue(
+                          'status',
+                          v as AdminArticleFormValues['status'],
+                        )
                       }
                     >
                       <SelectTrigger>

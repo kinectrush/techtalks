@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowDown,
@@ -104,8 +104,9 @@ export function ArticlesManager({
   const [articleToDelete, setArticleToDelete] =
     useState<AdminArticleRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isNavigating, startNavigation] = useTransition();
 
-  const tableBusy = isAnyPending || isDeleting;
+  const tableBusy = isAnyPending || isDeleting || isNavigating;
   const articles = result.items;
 
   const parentOptions = useMemo(
@@ -223,12 +224,12 @@ export function ArticlesManager({
 
   function openCreate() {
     if (tableBusy) return;
-    router.push('/manage/admin/articles/new');
+    startNavigation(() => router.push('/manage/admin/articles/new'));
   }
 
   function openEdit(article: AdminArticleRow) {
     if (tableBusy) return;
-    router.push(`/manage/admin/articles/${article.id}`);
+    startNavigation(() => router.push(`/manage/admin/articles/${article.id}`));
   }
 
   function openDeleteDialog(article: AdminArticleRow) {

@@ -1,15 +1,14 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { z } from 'zod';
-
-import { ManageLoadingButton } from '@/features/manage/components/manage-loading-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ManageLoadingButton } from '@/features/manage/components/manage-loading-button';
 import { ADMIN_ARTICLES_PATH } from '@/lib/manage/constants';
 
 const adminLoginSchema = z.object({
@@ -44,13 +43,11 @@ export function AdminLoginForm() {
       const data = (await res.json()) as { error?: string };
       if (!res.ok) throw new Error(data.error ?? 'Login failed');
       toast.success('Đăng nhập thành công');
-      const callback =
-        searchParams.get('callbackUrl') ?? ADMIN_ARTICLES_PATH;
+      const callback = searchParams.get('callbackUrl') ?? ADMIN_ARTICLES_PATH;
       router.replace(callback);
       router.refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Đăng nhập thất bại');
-    } finally {
       setIsSubmitting(false);
     }
   }
