@@ -1,9 +1,16 @@
 'use client';
 
-import { Loader2, Search, X } from 'lucide-react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useTransition,
+} from 'react';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
-
+import { Loader2, Search, X } from 'lucide-react';
+import { LinkPendingIndicator } from '@/components/common/link-pending-indicator';
 import { Input } from '@/components/ui/input';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { Link, useRouter } from '@/i18n/navigation';
@@ -36,9 +43,11 @@ export function ArticleSearch({
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<ReviewSearchResult[]>([]);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [isNavigating, startNavigation] = useTransition();
 
   const debouncedQuery = useDebouncedValue(query, 300);
-  const showDropdown = open && debouncedQuery.trim().length >= SEARCH_MIN_LENGTH;
+  const showDropdown =
+    open && debouncedQuery.trim().length >= SEARCH_MIN_LENGTH;
 
   const navigateToResults = useCallback(
     (term: string) => {
@@ -46,7 +55,9 @@ export function ArticleSearch({
       if (normalized.length < SEARCH_MIN_LENGTH) return;
       setOpen(false);
       setQuery('');
-      router.push(`/reviews?q=${encodeURIComponent(normalized)}`);
+      startNavigation(() =>
+        router.push(`/reviews?q=${encodeURIComponent(normalized)}`),
+      );
     },
     [router],
   );
@@ -73,7 +84,8 @@ export function ArticleSearch({
         setResults(json.data);
         setActiveIndex(-1);
       } catch (error) {
-        if (error instanceof DOMException && error.name === 'AbortError') return;
+        if (error instanceof DOMException && error.name === 'AbortError')
+          return;
         setResults([]);
       } finally {
         if (!controller.signal.aborted) setLoading(false);
@@ -106,7 +118,9 @@ export function ArticleSearch({
       if (activeIndex >= 0 && results[activeIndex]) {
         setOpen(false);
         setQuery('');
-        router.push(`/review/${results[activeIndex].slug}`);
+        startNavigation(() =>
+          router.push(`/review/${results[activeIndex].slug}`),
+        );
         return;
       }
       navigateToResults(query);
@@ -156,10 +170,7 @@ export function ArticleSearch({
           aria-controls={showDropdown ? listboxId : undefined}
           aria-autocomplete="list"
           autoComplete="off"
-          className={cn(
-            'h-9 w-full pl-9 pr-9',
-            variant === 'drawer' && 'h-10',
-          )}
+          className={cn('h-9 w-full pl-9 pr-9', variant === 'drawer' && 'h-10')}
           onChange={(event) => {
             setQuery(event.target.value);
             setOpen(true);
@@ -167,7 +178,7 @@ export function ArticleSearch({
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
         />
-        {loading ? (
+        {loading || isNavigating ? (
           <Loader2
             className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground"
             aria-hidden
@@ -210,11 +221,15 @@ export function ArticleSearch({
             ) : null}
 
             {results.map((article, index) => (
-              <li key={article.id} role="option" aria-selected={index === activeIndex}>
+              <li
+                key={article.id}
+                role="option"
+                aria-selected={index === activeIndex}
+              >
                 <Link
                   href={`/review/${article.slug}`}
                   className={cn(
-                    'block cursor-pointer px-3 py-2 transition-colors hover:bg-muted',
+                    'flex cursor-pointer items-center gap-2 px-3 py-2 transition-colors hover:bg-muted',
                     index === activeIndex && 'bg-muted',
                   )}
                   onClick={() => {
@@ -222,12 +237,15 @@ export function ArticleSearch({
                     setQuery('');
                   }}
                 >
-                  <p className="line-clamp-1 text-sm font-medium">
-                    {article.title}
-                  </p>
-                  <p className="line-clamp-1 text-xs text-muted-foreground">
-                    {article.category.name}
-                  </p>
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-1 text-sm font-medium">
+                      {article.title}
+                    </p>
+                    <p className="line-clamp-1 text-xs text-muted-foreground">
+                      {article.category.name}
+                    </p>
+                  </div>
+                  <LinkPendingIndicator className="shrink-0 text-brand" />
                 </Link>
               </li>
             ))}
@@ -238,8 +256,12 @@ export function ArticleSearch({
               type="button"
               className="w-full cursor-pointer border-t px-3 py-2 text-left text-sm font-medium text-brand hover:bg-muted"
               onClick={() => navigateToResults(query)}
+              disabled={isNavigating}
             >
               {t('searchViewAll', { query: debouncedQuery.trim() })}
+              {isNavigating ? (
+                <Loader2 className="ml-2 inline h-4 w-4 animate-spin" />
+              ) : null}
             </button>
           ) : null}
         </div>

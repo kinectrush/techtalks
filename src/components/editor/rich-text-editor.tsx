@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { mergeAttributes } from '@tiptap/core';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
@@ -18,17 +19,16 @@ import {
   Link as LinkIcon,
   List,
   ListOrdered,
+  Loader2,
   Quote,
   TableProperties,
   Underline as UnderlineIcon,
 } from 'lucide-react';
-import { useCallback, useRef, type ReactNode } from 'react';
 import { toast } from 'sonner';
-
-import { Button } from '@/components/ui/button';
 import { ComparisonTable } from '@/components/editor/extensions/comparison-table';
-import { TableEditorMenu } from '@/components/editor/table-editor-menu';
 import { EvaluationBox } from '@/components/editor/extensions/evaluation-box';
+import { TableEditorMenu } from '@/components/editor/table-editor-menu';
+import { Button } from '@/components/ui/button';
 import { uploadImageClient } from '@/lib/upload-client';
 import { cn } from '@/lib/utils';
 
@@ -44,11 +44,13 @@ function ToolbarButton({
   onClick,
   children,
   title,
+  disabled,
 }: {
   active?: boolean;
   onClick: () => void;
   children: ReactNode;
   title: string;
+  disabled?: boolean;
 }) {
   return (
     <Button
@@ -57,6 +59,7 @@ function ToolbarButton({
       size="icon"
       className="h-8 w-8"
       title={title}
+      disabled={disabled}
       onMouseDown={(e) => {
         // Keep editor selection (avoid blur/reset before command runs)
         e.preventDefault();
@@ -92,7 +95,10 @@ const LinkedImage = Image.extend({
     };
   },
   renderHTML({ HTMLAttributes }) {
-    const { href, target, ...imgAttrs } = HTMLAttributes as Record<string, string>;
+    const { href, target, ...imgAttrs } = HTMLAttributes as Record<
+      string,
+      string
+    >;
     const mergedImgAttrs = mergeAttributes(imgAttrs);
     if (href) {
       return [
@@ -116,6 +122,7 @@ export function RichTextEditor({
   className,
 }: RichTextEditorProps) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -141,23 +148,27 @@ export function RichTextEditor({
     },
     editorProps: {
       attributes: {
-        class: 'tiptap prose prose-sm max-w-none min-h-[280px] px-4 py-3 focus:outline-none',
+        class:
+          'tiptap prose prose-sm max-w-none min-h-[280px] px-4 py-3 focus:outline-none',
       },
     },
   });
 
   const insertImage = useCallback(
     async (file: File) => {
-      if (!editor) return;
+      if (!editor || isUploadingImage) return;
+      setIsUploadingImage(true);
       try {
         const url = await uploadImageClient(file, 'content');
         editor.chain().focus().setImage({ src: url, alt: file.name }).run();
         toast.success('Đã chèn ảnh');
       } catch (e) {
         toast.error(e instanceof Error ? e.message : 'Upload ảnh thất bại');
+      } finally {
+        setIsUploadingImage(false);
       }
     },
-    [editor],
+    [editor, isUploadingImage],
   );
 
   const insertImageByUrl = useCallback(
@@ -213,14 +224,18 @@ export function RichTextEditor({
         <ToolbarButton
           title="Tiêu đề H2"
           active={editor.isActive('heading', { level: 2 })}
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 2 }).run()
+          }
         >
           <Heading2 className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
           title="Tiêu đề H3"
           active={editor.isActive('heading', { level: 3 })}
-          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 3 }).run()
+          }
         >
           <Heading3 className="h-4 w-4" />
         </ToolbarButton>
@@ -257,32 +272,48 @@ export function RichTextEditor({
           title="Liên kết"
           active={editor.isActive('link')}
           onClick={() => {
-            const prev = editor.getAttributes('link').href as string | undefined;
+            const prev = editor.getAttributes('link').href as
+              | string
+              | undefined;
             const url = window.prompt('URL', prev ?? 'https://');
             if (url === null) return;
             if (url === '') {
               editor.chain().focus().extendMarkRange('link').unsetLink().run();
               return;
             }
-            editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+            editor
+              .chain()
+              .focus()
+              .extendMarkRange('link')
+              .setLink({ href: url })
+              .run();
           }}
         >
           <Link2 className="h-4 w-4" />
         </ToolbarButton>
         <ToolbarButton
           title="Gắn link cho ảnh"
-          active={editor.isActive('image') && Boolean(editor.getAttributes('image').href)}
+          active={
+            editor.isActive('image') &&
+            Boolean(editor.getAttributes('image').href)
+          }
           onClick={() => {
             if (!editor.isActive('image')) {
               toast.error('Hãy chọn 1 ảnh trong nội dung trước');
               return;
             }
-            const prev = editor.getAttributes('image').href as string | undefined;
+            const prev = editor.getAttributes('image').href as
+              | string
+              | undefined;
             const url = window.prompt('URL khi click ảnh', prev ?? 'https://');
             if (url === null) return;
             const trimmed = url.trim();
             if (trimmed === '') {
-              editor.chain().focus().updateAttributes('image', { href: null }).run();
+              editor
+                .chain()
+                .focus()
+                .updateAttributes('image', { href: null })
+                .run();
               return;
             }
             if (!/^https?:\/\//i.test(trimmed)) {
@@ -301,9 +332,14 @@ export function RichTextEditor({
         </ToolbarButton>
         <ToolbarButton
           title="Upload ảnh"
+          disabled={isUploadingImage}
           onClick={() => fileRef.current?.click()}
         >
-          <ImageIcon className="h-4 w-4" />
+          {isUploadingImage ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <ImageIcon className="h-4 w-4" />
+          )}
         </ToolbarButton>
         <ToolbarButton
           title="Chèn ảnh từ link"

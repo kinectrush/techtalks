@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-
+import { LinkPendingIndicator } from '@/components/common/link-pending-indicator';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import type { ReviewCategory } from '@/types/review';
@@ -32,13 +32,14 @@ export async function ReviewsCategoryFilter({
       <Link
         href={`/reviews?category=${parentCategory.slug}`}
         className={cn(
-          'cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition-colors',
+          'inline-flex cursor-pointer items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors',
           isAllActive
             ? 'bg-brand text-white'
             : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground',
         )}
       >
         {t('allCategories')}
+        <LinkPendingIndicator />
       </Link>
       {subcategories.map((sub) => {
         const active = activeSubSlug === sub.slug;
@@ -47,13 +48,14 @@ export async function ReviewsCategoryFilter({
             key={sub.slug}
             href={`/reviews?category=${sub.slug}`}
             className={cn(
-              'cursor-pointer rounded-full px-4 py-2 text-sm font-medium transition-colors',
+              'inline-flex cursor-pointer items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors',
               active
                 ? 'bg-brand text-white'
                 : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground',
             )}
           >
             {sub.name}
+            <LinkPendingIndicator />
           </Link>
         );
       })}

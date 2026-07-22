@@ -1,9 +1,9 @@
 'use client';
 
-import { LogOut, Menu, User } from 'lucide-react';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { Loader2, LogOut, Menu, User } from 'lucide-react';
 import { toast } from 'sonner';
-
 import { LanguageSwitcher } from '@/components/common/language-switcher';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -25,8 +25,11 @@ export function AppNavbar() {
   const tNav = useTranslations('Navigation');
   const { user } = useAuth();
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   async function handleLogout() {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
     try {
       await authService.logout();
       await fetch('/api/auth/logout', { method: 'POST' });
@@ -34,6 +37,7 @@ export function AppNavbar() {
       window.location.href = ADMIN_LOGIN_PATH;
     } catch {
       toast.error(t('error'));
+      setIsLoggingOut(false);
     }
   }
 
@@ -74,8 +78,16 @@ export function AppNavbar() {
             <User className="mr-2 h-4 w-4" />
             {tNav('profile')}
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleLogout}>
-            <LogOut className="mr-2 h-4 w-4" />
+          <DropdownMenuItem
+            onClick={() => void handleLogout()}
+            disabled={isLoggingOut}
+            aria-busy={isLoggingOut}
+          >
+            {isLoggingOut ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <LogOut className="mr-2 h-4 w-4" />
+            )}
             {t('logout')}
           </DropdownMenuItem>
         </DropdownMenuContent>

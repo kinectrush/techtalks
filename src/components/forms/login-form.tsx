@@ -1,12 +1,12 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslations } from 'next-intl';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -53,7 +53,6 @@ export function LoginForm() {
       router.replace(callback);
     } catch {
       toast.error(t('error'));
-    } finally {
       setIsSubmitting(false);
     }
   }
@@ -85,7 +84,8 @@ export function LoginForm() {
         ) : null}
       </div>
       <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? '...' : t('submit')}
+        {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+        {isSubmitting ? `${t('submit')}...` : t('submit')}
       </Button>
     </form>
   );

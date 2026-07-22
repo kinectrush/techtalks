@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-
+import { LinkPendingIndicator } from '@/components/common/link-pending-indicator';
 import { Link } from '@/i18n/navigation';
 import { formatNumber } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -32,32 +32,33 @@ export async function TrendingSidebar({
         {articles.map((article, idx) => {
           const rank = article.hotRank ?? idx + 1;
           return (
-          <li key={article.id}>
-            <Link
-              href={`/review/${article.slug}`}
-              className="group flex cursor-pointer gap-3 rounded-md p-2 transition-colors hover:bg-muted/60"
-            >
-              <span
-                className={cn(
-                  'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-sm font-bold',
-                  rank <= 3
-                    ? 'bg-brand text-white'
-                    : 'bg-muted text-muted-foreground',
-                )}
+            <li key={article.id}>
+              <Link
+                href={`/review/${article.slug}`}
+                className="group flex cursor-pointer gap-3 rounded-md p-2 transition-colors hover:bg-muted/60"
               >
-                {rank}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="line-clamp-2 text-sm font-medium leading-snug group-hover:text-brand">
-                  {article.title}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {formatNumber(article.engagement.views7d, locale)}{' '}
-                  {t('views')}
-                </p>
-              </div>
-            </Link>
-          </li>
+                <span
+                  className={cn(
+                    'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-sm font-bold',
+                    rank <= 3
+                      ? 'bg-brand text-white'
+                      : 'bg-muted text-muted-foreground',
+                  )}
+                >
+                  {rank}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="line-clamp-2 text-sm font-medium leading-snug group-hover:text-brand">
+                    {article.title}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {formatNumber(article.engagement.views7d, locale)}{' '}
+                    {t('views')}
+                  </p>
+                </div>
+                <LinkPendingIndicator className="shrink-0 self-center text-brand" />
+              </Link>
+            </li>
           );
         })}
       </ol>

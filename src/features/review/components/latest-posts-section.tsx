@@ -1,9 +1,8 @@
 import { getTranslations } from 'next-intl/server';
-
+import { LinkPendingIndicator } from '@/components/common/link-pending-indicator';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import type { ReviewSummary } from '@/types/review';
-
 import { ReviewCard } from './review-card';
 
 type LatestPostsSectionProps = {
@@ -24,7 +23,10 @@ export async function LatestPostsSection({
           {t('latestPosts')}
         </h2>
         <Button asChild variant="ghost" size="sm" className="text-brand">
-          <Link href="/reviews">{t('viewAll')}</Link>
+          <Link href="/reviews">
+            {t('viewAll')}
+            <LinkPendingIndicator className="ml-1" />
+          </Link>
         </Button>
       </div>
 

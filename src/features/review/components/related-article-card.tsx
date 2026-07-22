@@ -1,13 +1,12 @@
 'use client';
 
-import { CalendarDays } from 'lucide-react';
 import Image from 'next/image';
-
+import { CalendarDays } from 'lucide-react';
+import { LinkPendingIndicator } from '@/components/common/link-pending-indicator';
 import { Link } from '@/i18n/navigation';
 import { formatRelativeTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { ReviewSummary } from '@/types/review';
-
 import { HotBadgeLabel } from './hot-badge';
 import { StarRating } from './star-rating';
 
@@ -70,9 +69,15 @@ export function RelatedArticleCard({
               : '(max-width: 768px) 88vw, 320px'
           }
         />
+        <LinkPendingIndicator className="absolute inset-0 bg-black/35 text-white" />
       </Link>
 
-      <div className={cn('flex flex-1 flex-col', isGrid ? 'gap-2 p-3' : 'gap-3 p-4')}>
+      <div
+        className={cn(
+          'flex flex-1 flex-col',
+          isGrid ? 'gap-2 p-3' : 'gap-3 p-4',
+        )}
+      >
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-[11px] font-medium text-muted-foreground">
             {article.category.name}
@@ -87,7 +92,7 @@ export function RelatedArticleCard({
           ) : null}
         </div>
 
-        <Link href={href} className="group">
+        <Link href={href} className="group inline-flex items-start gap-2">
           <h3
             className={cn(
               'font-bold leading-snug text-foreground group-hover:text-brand',
@@ -98,6 +103,7 @@ export function RelatedArticleCard({
           >
             {article.title}
           </h3>
+          <LinkPendingIndicator className="mt-0.5 shrink-0 text-brand" />
         </Link>
 
         {!isGrid ? (
@@ -133,6 +139,7 @@ export function RelatedArticleCard({
               )}
             >
               {readReviewLabel}
+              <LinkPendingIndicator className="ml-1" />
             </Link>
           </div>
         </div>

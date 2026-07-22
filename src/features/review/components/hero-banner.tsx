@@ -1,9 +1,8 @@
-import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
-
+import Image from 'next/image';
+import { LinkPendingIndicator } from '@/components/common/link-pending-indicator';
 import { Link } from '@/i18n/navigation';
 import type { ReviewSummary } from '@/types/review';
-
 import { HotBadgeLabel } from './hot-badge';
 import { StarRating } from './star-rating';
 
@@ -30,7 +29,9 @@ export async function HeroBanner({ article, locale }: HeroBannerProps) {
         href={href}
         aria-label={article.title}
         className="absolute inset-0 z-10"
-      />
+      >
+        <LinkPendingIndicator className="absolute inset-0 bg-black/35 text-white" />
+      </Link>
       <div className="grid md:grid-cols-2 md:items-stretch">
         <div className="relative">
           <div className="relative aspect-[16/10] md:hidden">
@@ -58,7 +59,6 @@ export async function HeroBanner({ article, locale }: HeroBannerProps) {
         </div>
 
         <div className="flex flex-col justify-center gap-4 p-6 md:p-10">
-          
           <div className="flex flex-wrap items-center gap-2">
             {article.listBadge ? (
               <HotBadgeLabel

@@ -1,14 +1,13 @@
 'use client';
 
-import { Eye, ThumbsUp } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
-
+import { useTranslations } from 'next-intl';
+import { Eye, Loader2, ThumbsUp } from 'lucide-react';
 import { FacebookIcon } from '@/components/icons/facebook-icon';
 import { Button } from '@/components/ui/button';
 import { formatNumber, formatRelativeTime } from '@/lib/format';
-import { cn } from '@/lib/utils';
 import { openFacebookSharePopup } from '@/lib/share/facebook';
+import { cn } from '@/lib/utils';
 import type { ReviewEngagement } from '@/types/review';
 
 type ReviewEngagementBarProps = {
@@ -25,7 +24,9 @@ const facebookButtonClass =
 
 function readLikedCookie(articleId: string): boolean {
   if (typeof document === 'undefined') return false;
-  return document.cookie.split('; ').some((c) => c === `rv_liked_${articleId}=1`);
+  return document.cookie
+    .split('; ')
+    .some((c) => c === `rv_liked_${articleId}=1`);
 }
 
 export function ReviewEngagementBar({
@@ -39,6 +40,7 @@ export function ReviewEngagementBar({
   const t = useTranslations('Review');
   const [engagement, setEngagement] = useState(initialEngagement);
   const [liked, setLiked] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
   const viewKey = useMemo(() => `rv_view_once:${articleId}`, [articleId]);
 
   useEffect(() => {
@@ -57,27 +59,36 @@ export function ReviewEngagementBar({
     fetch(`/api/reviews/${articleId}/view`, { method: 'POST' })
       .then((r) => r.json())
       .then((json) => {
-        if (json?.engagement) setEngagement(json.engagement as ReviewEngagement);
+        if (json?.engagement)
+          setEngagement(json.engagement as ReviewEngagement);
       })
       .catch(() => {});
   }, [articleId, viewKey]);
 
   async function handleLike() {
-    if (liked) return;
+    if (liked || isLiking) return;
+    setIsLiking(true);
     try {
-      const res = await fetch(`/api/reviews/${articleId}/like`, { method: 'POST' });
+      const res = await fetch(`/api/reviews/${articleId}/like`, {
+        method: 'POST',
+      });
+      if (!res.ok) throw new Error('Like failed');
       const json = await res.json();
       if (json?.engagement) setEngagement(json.engagement as ReviewEngagement);
       setLiked(true);
       onLiked?.();
     } catch {
       // ignore
+    } finally {
+      setIsLiking(false);
     }
   }
 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
-      <time dateTime={publishedAt}>{formatRelativeTime(publishedAt, locale)}</time>
+      <time dateTime={publishedAt}>
+        {formatRelativeTime(publishedAt, locale)}
+      </time>
       <span className="flex items-center gap-1">
         <Eye className="h-3.5 w-3.5" />
         {formatNumber(engagement.views, locale)}
@@ -109,13 +120,17 @@ export function ReviewEngagementBar({
             liked && 'bg-facebook-active hover:bg-facebook-active',
           )}
           onClick={handleLike}
-          disabled={liked}
+          disabled={liked || isLiking}
+          aria-busy={isLiking}
         >
-          <ThumbsUp className="h-4 w-4" />
+          {isLiking ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <ThumbsUp className="h-4 w-4" />
+          )}
           {liked ? t('liked') : t('like')}
         </Button>
       </div>
     </div>
   );
 }
-

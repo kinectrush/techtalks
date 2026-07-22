@@ -1,9 +1,8 @@
 'use client';
 
-import { Eye } from 'lucide-react';
 import { useState } from 'react';
+import { Eye } from 'lucide-react';
 import { toast } from 'sonner';
-
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -21,8 +20,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ManagePagination } from '@/features/manage/components/manage-pagination';
-import { listContactMessagesAction } from '@/features/manage/messages/actions';
+import { ManagePendingOverlay } from '@/features/manage/components/manage-pending-overlay';
 import { usePendingKeys } from '@/features/manage/hooks/use-pending-keys';
+import { listContactMessagesAction } from '@/features/manage/messages/actions';
 import type { PaginatedResult } from '@/lib/pagination';
 import type { AdminContactMessage } from '@/types/admin';
 
@@ -57,7 +57,8 @@ export function MessagesManager({ initialResult }: MessagesManagerProps) {
         </p>
       </div>
 
-      <div className="rounded-lg border">
+      <div className="relative rounded-lg border">
+        <ManagePendingOverlay show={isAnyPending} />
         <Table>
           <TableHeader>
             <TableRow>
@@ -77,14 +78,13 @@ export function MessagesManager({ initialResult }: MessagesManagerProps) {
                   </p>
                 </TableCell>
                 <TableCell>{m.email}</TableCell>
-                <TableCell>
-                  {new Date(m.createdAt).toLocaleString()}
-                </TableCell>
+                <TableCell>{new Date(m.createdAt).toLocaleString()}</TableCell>
                 <TableCell>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setActive(m)}
+                    disabled={isAnyPending}
                     aria-label="Xem"
                   >
                     <Eye className="h-4 w-4" />

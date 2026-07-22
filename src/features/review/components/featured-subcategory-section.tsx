@@ -1,12 +1,11 @@
+import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import { ArrowRight, Sparkles, Trophy } from 'lucide-react';
-import { getTranslations } from 'next-intl/server';
-
+import { LinkPendingIndicator } from '@/components/common/link-pending-indicator';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import { sortStandings } from '@/lib/world-cup/homepage-config';
 import type { FeaturedSubcategory } from '@/types/review';
-
 import { WorldCupGroupStandings } from './world-cup-group-standings';
 
 type FeaturedSubcategorySectionProps = {
@@ -39,12 +38,14 @@ function FeaturedArticleRow({
           className="object-cover transition-transform duration-500 group-hover:scale-105"
           sizes="144px"
         />
+        <LinkPendingIndicator className="absolute inset-0 bg-black/35 text-white" />
       </Link>
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5">
-        <Link href={href}>
+        <Link href={href} className="inline-flex items-start gap-2">
           <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-white transition-colors group-hover:text-[var(--featured-accent)] sm:text-base">
             {article.title}
           </h3>
+          <LinkPendingIndicator className="mt-1 shrink-0 text-[var(--featured-accent)]" />
         </Link>
         <p className="line-clamp-2 text-xs text-white/55 sm:text-sm">
           {article.excerpt}
@@ -133,6 +134,7 @@ export async function FeaturedSubcategorySection({
             style={{ backgroundColor: accent }}
           >
             {t('viewAll')}
+            <LinkPendingIndicator />
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
@@ -154,8 +156,7 @@ export async function FeaturedSubcategorySection({
         <div
           className={cn(
             'grid gap-6 lg:gap-8',
-            groups.length &&
-              'lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]',
+            groups.length && 'lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]',
           )}
         >
           <div className="min-w-0">

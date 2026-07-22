@@ -1,11 +1,10 @@
 'use client';
 
 import Image from 'next/image';
-
+import { LinkPendingIndicator } from '@/components/common/link-pending-indicator';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import type { ReviewSummary } from '@/types/review';
-
 import { HotBadgeLabel } from './hot-badge';
 import { StarRating } from './star-rating';
 
@@ -66,9 +65,15 @@ export function ReviewCard({
           className="object-cover transition-transform duration-300 group-hover:scale-105"
           sizes={isHorizontal ? '144px' : '(max-width:768px) 100vw, 50vw'}
         />
+        <LinkPendingIndicator className="absolute inset-0 bg-black/35 text-white" />
       </Link>
 
-      <div className={cn('flex flex-1 flex-col', isHorizontal ? 'py-1 pr-3' : 'gap-2 p-4')}>
+      <div
+        className={cn(
+          'flex flex-1 flex-col',
+          isHorizontal ? 'py-1 pr-3' : 'gap-2 p-4',
+        )}
+      >
         <div className="flex flex-wrap items-center gap-2">
           {article.listBadge ? (
             <HotBadgeLabel
@@ -80,15 +85,21 @@ export function ReviewCard({
           ) : null}
         </div>
 
-        <Link href={href} className="cursor-pointer">
+        <Link
+          href={href}
+          className="inline-flex cursor-pointer items-start gap-2"
+        >
           <h3
             className={cn(
               'font-semibold leading-snug text-foreground group-hover:text-brand',
-              isHorizontal ? 'line-clamp-2 text-base' : 'line-clamp-2 text-lg md:text-xl',
+              isHorizontal
+                ? 'line-clamp-2 text-base'
+                : 'line-clamp-2 text-lg md:text-xl',
             )}
           >
             {article.title}
           </h3>
+          <LinkPendingIndicator className="mt-1 shrink-0 text-brand" />
         </Link>
 
         {!isHorizontal && variant !== 'compact' ? (
