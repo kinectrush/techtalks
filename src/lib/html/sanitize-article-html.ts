@@ -13,7 +13,10 @@ const EVAL_BOX_CLASSES = [
 ] as const;
 
 /** Editor-only; strip from published HTML if present. */
-const EDITOR_ONLY_CLASSES = new Set(['article-eval-box--editor', 'article-eval-box__row--editor']);
+const EDITOR_ONLY_CLASSES = new Set([
+  'article-eval-box--editor',
+  'article-eval-box__row--editor',
+]);
 
 const TABLE_CLASSES = ['article-comparison-table'] as const;
 
@@ -84,6 +87,13 @@ export function sanitizeArticleHtml(html: string): string {
       allowedAttributes: ALLOWED_ATTR,
       allowedClasses: ALLOWED_CLASSES,
       transformTags: {
+        table: (tagName, attribs) => ({
+          tagName,
+          attribs: {
+            ...attribs,
+            class: [attribs.class, ...TABLE_CLASSES].filter(Boolean).join(' '),
+          },
+        }),
         div: (tagName, attribs) => {
           if (!attribs.class) return { tagName, attribs };
           const classes = attribs.class
@@ -91,7 +101,9 @@ export function sanitizeArticleHtml(html: string): string {
             .filter((c) => c && !EDITOR_ONLY_CLASSES.has(c));
           return {
             tagName,
-            attribs: classes.length ? { ...attribs, class: classes.join(' ') } : attribs,
+            attribs: classes.length
+              ? { ...attribs, class: classes.join(' ') }
+              : attribs,
           };
         },
       },

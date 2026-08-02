@@ -95,6 +95,9 @@ export function buildReviewDetailMetadata(
       description: article.excerpt,
       images: ogImages.map((img) => img.url),
     },
+    ...(env.facebookAppId
+      ? { facebook: { appId: env.facebookAppId } }
+      : {}),
     robots: { index: true, follow: true },
   };
 }

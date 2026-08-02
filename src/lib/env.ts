@@ -8,6 +8,7 @@ function required(name: string, value: string | undefined): string {
 export const env = {
   appUrl: process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
   apiBaseUrl: process.env.API_BASE_URL ?? 'http://localhost:4000/api',
+  facebookAppId: process.env.FB_APP_ID,
   isDev: process.env.NODE_ENV === 'development',
 } as const;
 
